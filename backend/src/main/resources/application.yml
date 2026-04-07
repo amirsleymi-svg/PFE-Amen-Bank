@@ -1,0 +1,64 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: amen-bank
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/amen_bank?useSSL=false&serverTimezone=Africa/Tunis&allowPublicKeyRetrieval=true
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:amir.sleymi@gmail.com}
+    password: ${MAIL_PASSWORD:zopxzgwbuhtocjql}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enabled: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:aW1wb3J0YW50LXNlY3JldC1rZXktZm9yLWFtZW4tYmFuay1hcHBsaWNhdGlvbi0yMDI2LXNlY3VyZS1rZXktbXVzdC1iZS1sb25n}
+    access-token-expiration: 900000
+    refresh-token-expiration: 604800000
+
+  otp:
+    expiration-minutes: 5
+    length: 6
+
+  account-lock:
+    max-attempts: 5
+    lock-duration-minutes: 30
+
+  activation:
+    token-expiration-hours: 24
+
+  reset:
+    token-expiration-hours: 1
+
+  cors:
+    allowed-origins: http://localhost:4200
+
+  chatbot:
+    ollama-url: http://localhost:11434
+    model: llama3.2:3b
