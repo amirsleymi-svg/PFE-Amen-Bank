@@ -6,7 +6,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.util.List;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class GroupedTransferRequest {
     @NotNull(message = "Source account ID is required")
     private Long sourceAccountId;
@@ -17,10 +20,17 @@ public class GroupedTransferRequest {
 
     private String description;
 
-    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class BeneficiaryDto {
-        @NotNull private String beneficiaryName;
-        @NotNull private String beneficiaryIban;
-        @NotNull @jakarta.validation.constraints.DecimalMin("0.001") private java.math.BigDecimal amount;
+        @NotNull
+        private String beneficiaryName;
+        @NotNull
+        private String beneficiaryIban;
+        @NotNull
+        @jakarta.validation.constraints.DecimalMin("0.001")
+        private java.math.BigDecimal amount;
     }
 }

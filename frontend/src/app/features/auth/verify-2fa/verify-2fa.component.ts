@@ -41,25 +41,37 @@ export class Verify2faComponent implements OnInit {
 
   ngOnInit() {
     this.email = this.route.snapshot.queryParamMap.get('email') || '';
+    if (!this.email) {
+      this.router.navigate(['/login']);
+    }
   }
 
   onSubmit() {
+    if (!this.email) { this.router.navigate(['/login']); return; }
     this.loading.set(true);
     this.error.set('');
     this.auth.verify2fa(this.email, this.code).subscribe({
       next: (res) => {
         this.loading.set(false);
-        if (res.success && res.data) {
-          const role = res.data.user.role;
-          if (role === 'CLIENT') this.router.navigate(['/client']);
-          else if (role === 'EMPLOYEE') this.router.navigate(['/employee']);
-          else if (role === 'ADMIN') this.router.navigate(['/admin']);
+        if (res.success && res.data?.user?.role) {
+          this.redirectByRole(res.data.user.role);
+          return;
         }
+        this.error.set('Reponse invalide. Reessayez.');
       },
       error: (err) => {
         this.loading.set(false);
         this.error.set(err.error?.message || 'Code invalide');
       }
     });
+  }
+
+  private redirectByRole(role: string): void {
+    switch (role) {
+      case 'CLIENT': this.router.navigate(['/client/dashboard']); break;
+      case 'EMPLOYEE': this.router.navigate(['/employee/dashboard']); break;
+      case 'ADMIN': this.router.navigate(['/admin/dashboard']); break;
+      default: this.error.set('Role utilisateur inconnu. Contactez le support.');
+    }
   }
 }

@@ -2,6 +2,7 @@ package com.amenbank.config;
 
 import com.amenbank.security.JwtAuthEntryPoint;
 import com.amenbank.security.JwtAuthenticationFilter;
+import com.amenbank.security.RateLimitFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -31,6 +32,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    private final RateLimitFilter rateLimitFilter;
+    private final com.amenbank.security.IpBlockFilter ipBlockFilter;
 
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
@@ -47,7 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/registration-requests").permitAll()
                 .requestMatchers("/api/password-reset-requests").permitAll()
-                .requestMatchers("/api/chatbot/**").permitAll()
+                .requestMatchers("/ws/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Client endpoints
                 .requestMatchers("/api/client/**").hasRole("CLIENT")
@@ -58,6 +61,8 @@ public class SecurityConfig {
                 // Everything else requires auth
                 .anyRequest().authenticated()
             )
+            .addFilterBefore(ipBlockFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

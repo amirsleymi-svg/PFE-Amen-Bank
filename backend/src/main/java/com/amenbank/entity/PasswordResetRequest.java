@@ -32,6 +32,9 @@ public class PasswordResetRequest {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

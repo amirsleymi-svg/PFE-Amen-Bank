@@ -6,6 +6,7 @@ import com.amenbank.notification.EmailService;
 import com.amenbank.repository.TwoFactorCodeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ public class OtpService {
 
     private final TwoFactorCodeRepository twoFactorCodeRepository;
     private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
     private final SecureRandom random = new SecureRandom();
 
     @Value("${app.otp.expiration-minutes}")
@@ -34,7 +36,7 @@ public class OtpService {
 
         TwoFactorCode otp = TwoFactorCode.builder()
                 .user(user)
-                .code(code)
+                .code(passwordEncoder.encode(code))
                 .purpose(purpose)
                 .expiresAt(LocalDateTime.now().plusMinutes(otpExpirationMinutes))
                 .build();
@@ -53,7 +55,7 @@ public class OtpService {
                 .findTopByUserIdAndPurposeAndUsedFalseOrderByCreatedAtDesc(user.getId(), purpose)
                 .map(otp -> {
                     if (otp.isExpired()) return false;
-                    if (!otp.getCode().equals(code)) return false;
+                    if (!passwordEncoder.matches(code, otp.getCode())) return false;
                     otp.setUsed(true);
                     twoFactorCodeRepository.save(otp);
                     return true;

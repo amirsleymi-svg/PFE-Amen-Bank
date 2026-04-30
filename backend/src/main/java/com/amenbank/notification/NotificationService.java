@@ -4,13 +4,16 @@ import com.amenbank.entity.Notification;
 import com.amenbank.entity.User;
 import com.amenbank.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
 
     public void send(User user, String title, String message, Notification.NotificationType type) {
         Notification notification = Notification.builder()
@@ -19,7 +22,15 @@ public class NotificationService {
                 .message(message)
                 .type(type)
                 .build();
-        notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+        notificationWebSocketHandler.sendToUser(user.getId(), NotificationRealtimeEvent.builder()
+                .userId(user.getId())
+                .title(saved.getTitle())
+                .message(saved.getMessage())
+                .type(saved.getType())
+                .createdAt(saved.getCreatedAt())
+                .build());
+        log.info("Nouvelle notification envoyee via WebSocket");
     }
 
     public void sendInfo(User user, String title, String message) {

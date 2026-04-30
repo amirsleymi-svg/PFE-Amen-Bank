@@ -14,6 +14,7 @@ public class UserResponse {
     private String role;
     private String status;
     private Boolean twoFactorEnabled;
+    private Boolean rootAdmin;
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
 }

@@ -34,4 +34,36 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     );
 
     boolean existsByReference(String reference);
+
+    @Query("SELECT COUNT(t) FROM Transaction t WHERE t.sourceAccount.id = :accountId AND t.createdAt >= :since")
+    long countBySourceAccountSince(@Param("accountId") Long accountId, @Param("since") LocalDateTime since);
+
+    @Query("SELECT t FROM Transaction t WHERE t.type IN :types ORDER BY t.createdAt DESC")
+    Page<Transaction> findByTypeIn(@Param("types") java.util.List<Transaction.TransactionType> types, Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t WHERE t.status = :status AND t.type IN :types ORDER BY t.createdAt DESC")
+    Page<Transaction> findByStatusAndTypeInOrdered(
+        @Param("status") Transaction.TransactionStatus status,
+        @Param("types") java.util.List<Transaction.TransactionType> types,
+        Pageable pageable
+    );
+
+    @Query("SELECT t FROM Transaction t WHERE t.status IN :statuses AND t.sourceAccount.id IN :accountIds")
+    java.util.List<Transaction> findByStatusInAndSourceAccountIds(
+        @Param("statuses") java.util.List<Transaction.TransactionStatus> statuses,
+        @Param("accountIds") java.util.List<Long> accountIds
+    );
+
+    @Query("SELECT COUNT(t) FROM Transaction t WHERE t.status = :status AND t.type IN :types")
+    long countByStatusAndTypeIn(
+        @Param("status") Transaction.TransactionStatus status,
+        @Param("types") java.util.List<Transaction.TransactionType> types
+    );
+
+    @Query("SELECT t FROM Transaction t WHERE t.type IN :types AND t.createdAt BETWEEN :from AND :to ORDER BY t.createdAt ASC")
+    java.util.List<Transaction> findByTypeInAndCreatedAtBetween(
+        @Param("types") java.util.List<Transaction.TransactionType> types,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
 }

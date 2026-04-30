@@ -1,30 +1,38 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { CLIENT_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { BankAccount } from '../../../core/models/api.models';
+import { DecimalPipe } from '@angular/common';
 
 @Component({
   selector: 'app-card-link',
-  imports: [SidebarComponent, FormsModule],
+  imports: [SidebarComponent, FormsModule, DecimalPipe],
   template: `
     <div class="layout">
-      <app-sidebar [items]="[]" />
+      <app-sidebar [items]="navItems" />
       <main class="main-content">
-        <div class="page-header"><h1>Lier une carte bancaire</h1></div>
+        <div class="page-header"><h1>Demander une carte bancaire</h1></div>
         @if (success()) { <div class="alert alert-success">{{ success() }}</div> }
         @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
         <div class="card" style="max-width:450px;">
+          <p style="color:#666;font-size:0.9rem;margin-bottom:1rem;">
+            Selectionnez un compte actif pour generer une carte bancaire.
+          </p>
           <form (ngSubmit)="onSubmit()">
             <div class="form-group">
               <label>Compte</label>
-              <select [(ngModel)]="form.accountId" name="account" required>
-                @for (a of accounts(); track a.id) { <option [value]="a.id">{{ a.accountNumber }}</option> }
+              <select [(ngModel)]="selectedAccountId" name="account" required>
+                <option [ngValue]="null" disabled>-- Choisir un compte --</option>
+                @for (a of accounts(); track a.id) {
+                  <option [ngValue]="a.id">{{ a.accountNumber }} - {{ a.balance | number:'1.3-3' }} TND</option>
+                }
               </select>
             </div>
-            <div class="form-group"><label>Numero de carte</label><input type="text" [(ngModel)]="form.cardNumber" name="card" placeholder="XXXX XXXX XXXX XXXX" required></div>
-            <div class="form-group"><label>Date d'expiration (MM/YY)</label><input type="text" [(ngModel)]="form.expiryDate" name="expiry" placeholder="MM/YY" required></div>
-            <button type="submit" class="btn btn-primary btn-block" [disabled]="loading()">Lier la carte</button>
+            <button type="submit" class="btn btn-primary btn-block" [disabled]="loading() || !selectedAccountId">
+              {{ loading() ? 'Creation...' : 'Demander la carte' }}
+            </button>
           </form>
         </div>
       </main>
@@ -33,15 +41,43 @@ import { BankAccount } from '../../../core/models/api.models';
 })
 export class CardLinkComponent implements OnInit {
   accounts = signal<BankAccount[]>([]);
-  form: any = { accountId: null, cardNumber: '', expiryDate: '' };
-  loading = signal(false); success = signal(''); error = signal('');
+  selectedAccountId: number | null = null;
+  loading = signal(false);
+  success = signal('');
+  error = signal('');
+  navItems = CLIENT_NAV;
+
   constructor(private api: ApiService) {}
-  ngOnInit() { this.api.getAccounts().subscribe(r => { if (r.data?.length) { this.accounts.set(r.data); this.form.accountId = r.data[0].id; } }); }
+
+  ngOnInit() {
+    this.api.getAccounts().subscribe({
+      next: r => {
+        if (r.data?.length) {
+          this.accounts.set(r.data.filter(a => a.status === 'ACTIVE'));
+        }
+      },
+      error: () => {}
+    });
+  }
+
   onSubmit() {
-    this.loading.set(true); this.error.set('');
-    this.api.linkCard(this.form).subscribe({
-      next: () => { this.loading.set(false); this.success.set('Carte liee avec succes.'); },
-      error: (e) => { this.loading.set(false); this.error.set(e.error?.message || 'Erreur'); }
+    if (!this.selectedAccountId) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.success.set('');
+    this.api.requestCard(this.selectedAccountId).subscribe({
+      next: (r) => {
+        this.loading.set(false);
+        const c = r.data;
+        this.success.set(c
+          ? `Carte creee avec succes : ${c.cardNumberMasked} (expire ${c.expiryDate})`
+          : 'Carte creee avec succes.');
+        this.selectedAccountId = null;
+      },
+      error: (e) => {
+        this.loading.set(false);
+        this.error.set(e.error?.message || 'Erreur lors de la creation de la carte');
+      }
     });
   }
 }

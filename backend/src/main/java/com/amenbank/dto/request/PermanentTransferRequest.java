@@ -7,7 +7,10 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class PermanentTransferRequest {
     @NotNull(message = "Source account ID is required")
     private Long sourceAccountId;

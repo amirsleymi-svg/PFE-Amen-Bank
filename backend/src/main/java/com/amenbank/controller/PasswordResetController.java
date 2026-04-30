@@ -18,6 +18,7 @@ public class PasswordResetController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> submitRequest(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.submitRequest(request.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("Password reset request submitted. An admin will review it."));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Si un compte existe pour cet email, un lien de reinitialisation vient d'etre envoye."));
     }
 }

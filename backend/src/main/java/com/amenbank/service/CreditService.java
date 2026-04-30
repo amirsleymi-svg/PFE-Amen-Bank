@@ -5,14 +5,17 @@ import com.amenbank.dto.request.CreditRequestDto;
 import com.amenbank.dto.request.CreditSimulationRequest;
 import com.amenbank.dto.response.CreditRequestResponse;
 import com.amenbank.dto.response.CreditSimulationResponse;
+import com.amenbank.entity.BankAccount;
 import com.amenbank.entity.CreditRequest;
 import com.amenbank.entity.CreditSimulation;
 import com.amenbank.entity.User;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.NotificationService;
+import com.amenbank.repository.BankAccountRepository;
 import com.amenbank.repository.CreditRequestRepository;
 import com.amenbank.repository.CreditSimulationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -22,21 +25,27 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CreditService {
 
     private final CreditRequestRepository creditRequestRepository;
     private final CreditSimulationRepository creditSimulationRepository;
+    private final BankAccountRepository bankAccountRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
 
     private static final BigDecimal DEFAULT_INTEREST_RATE = new BigDecimal("7.50");
 
     public CreditSimulationResponse simulate(CreditSimulationRequest request, User user) {
-        CreditSimulationResponse result = calculateCredit(request.getAmount(), request.getDurationMonths());
+        BigDecimal rate = request.getInterestRate() != null ? request.getInterestRate() : DEFAULT_INTEREST_RATE;
+        CreditSimulationResponse result = calculateCredit(request.getAmount(), request.getDurationMonths(), rate);
 
         CreditSimulation simulation = CreditSimulation.builder()
                 .client(user)
@@ -53,7 +62,7 @@ public class CreditService {
 
     @Transactional
     public CreditRequestResponse createRequest(CreditRequestDto dto, User user) {
-        CreditSimulationResponse calc = calculateCredit(dto.getAmount(), dto.getDurationMonths());
+        CreditSimulationResponse calc = calculateCredit(dto.getAmount(), dto.getDurationMonths(), DEFAULT_INTEREST_RATE);
 
         CreditRequest request = CreditRequest.builder()
                 .client(user)
@@ -69,6 +78,11 @@ public class CreditService {
         auditService.log(user, "CREATE_CREDIT_REQUEST", "CreditRequest", request.getId(),
                 "Credit request of " + dto.getAmount() + " TND for " + dto.getDurationMonths() + " months");
 
+        notificationService.sendInfo(user, "Demande de credit enregistree",
+                "Votre demande de credit de " + dto.getAmount() + " TND sur " + dto.getDurationMonths() +
+                " mois (ref: CR-" + String.format("%06d", request.getId()) + ") est en attente d'approbation. " +
+                "Vous serez notifie des qu'un employe aura traite votre dossier.");
+
         return mapToResponse(request);
     }
 
@@ -80,6 +94,15 @@ public class CreditService {
         return creditRequestRepository.findByStatus(CreditRequest.CreditStatus.PENDING, pageable).map(this::mapToResponse);
     }
 
+    public Page<CreditRequestResponse> getAllCredits(Pageable pageable) {
+        return creditRequestRepository.findAllByOrderByCreatedAtDesc(pageable).map(this::mapToResponse);
+    }
+
+    public Page<CreditRequestResponse> getCreditsByStatus(String status, Pageable pageable) {
+        CreditRequest.CreditStatus creditStatus = CreditRequest.CreditStatus.valueOf(status.toUpperCase());
+        return creditRequestRepository.findByStatus(creditStatus, pageable).map(this::mapToResponse);
+    }
+
     @Transactional
     public void approve(Long id, User reviewer, String comment) {
         CreditRequest request = creditRequestRepository.findById(id)
@@ -89,15 +112,46 @@ public class CreditService {
             throw new BusinessException("Request already processed", "CR_ALREADY_PROCESSED");
         }
 
-        request.setStatus(CreditRequest.CreditStatus.APPROVED);
+        User client = request.getClient();
+
+        // Find the client's first ACTIVE bank account for disbursement
+        List<BankAccount> accounts = bankAccountRepository.findByClientId(client.getId());
+        BankAccount targetAccount = accounts.stream()
+                .filter(a -> a.getStatus() == BankAccount.AccountStatus.ACTIVE)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(
+                        "Le client n'a aucun compte bancaire actif pour recevoir le credit",
+                        "NO_ACTIVE_ACCOUNT"));
+
+        // Update credit status → DISBURSED (approved + money sent in one step)
+        request.setStatus(CreditRequest.CreditStatus.DISBURSED);
         request.setReviewedBy(reviewer);
         request.setDecisionComment(comment);
         request.setReviewedAt(LocalDateTime.now());
         creditRequestRepository.save(request);
 
-        auditService.log(reviewer, "APPROVE_CREDIT", "CreditRequest", id, "Credit approved");
-        notificationService.sendSuccess(request.getClient(), "Credit approuve",
-                "Votre demande de credit de " + request.getAmount() + " TND a ete approuvee.");
+        // Disburse: credit the client's account
+        targetAccount.setBalance(targetAccount.getBalance().add(request.getAmount()));
+        bankAccountRepository.save(targetAccount);
+
+        log.info("Credit #{} disbursed: {} TND to account {} (client {})",
+                id, request.getAmount(), targetAccount.getAccountNumber(),
+                client.getFirstName() + " " + client.getLastName());
+
+        auditService.log(reviewer, "APPROVE_CREDIT", "CreditRequest", id,
+                "Credit approved and disbursed: " + request.getAmount() + " TND to account " +
+                        targetAccount.getAccountNumber());
+
+        String notifMsg = "Votre credit a ete approuve avec succes. Veuillez consulter votre compte bancaire pour verifier le solde disponible.\n\n" +
+                "Details du credit :\n" +
+                "  - Montant : " + request.getAmount() + " TND\n" +
+                "  - Duree : " + request.getDurationMonths() + " mois\n" +
+                "  - Mensualite : " + request.getMonthlyPayment() + " TND\n" +
+                "  - Cout total : " + request.getTotalCost() + " TND\n" +
+                "  - Reference : CR-" + String.format("%06d", request.getId()) + "\n" +
+                "  - Date : " + request.getReviewedAt().toLocalDate() + "\n" +
+                "  - Compte credite : " + targetAccount.getAccountNumber();
+        notificationService.sendSuccess(client, "Credit approuve et verse", notifMsg);
     }
 
     @Transactional
@@ -116,12 +170,16 @@ public class CreditService {
         creditRequestRepository.save(request);
 
         auditService.log(reviewer, "REJECT_CREDIT", "CreditRequest", id, "Credit rejected: " + comment);
-        notificationService.sendError(request.getClient(), "Credit refuse",
-                "Votre demande de credit a ete refusee. Motif: " + comment);
+        String rejectMsg = "Votre demande de credit a ete refusee.\n\n" +
+                "Details :\n" +
+                "  - Montant demande : " + request.getAmount() + " TND\n" +
+                "  - Reference : CR-" + String.format("%06d", request.getId()) + "\n" +
+                "  - Motif du refus : " + (comment != null && !comment.isBlank() ? comment : "Non precise") + "\n\n" +
+                "Veuillez contacter votre agence pour plus d'informations.";
+        notificationService.sendError(request.getClient(), "Credit refuse", rejectMsg);
     }
 
-    private CreditSimulationResponse calculateCredit(BigDecimal amount, int months) {
-        BigDecimal annualRate = DEFAULT_INTEREST_RATE;
+    private CreditSimulationResponse calculateCredit(BigDecimal amount, int months, BigDecimal annualRate) {
         BigDecimal monthlyRate = annualRate.divide(BigDecimal.valueOf(1200), 10, RoundingMode.HALF_UP);
 
         // Monthly payment = P * r * (1+r)^n / ((1+r)^n - 1)
@@ -134,6 +192,8 @@ public class CreditService {
         BigDecimal totalCost = monthlyPayment.multiply(BigDecimal.valueOf(months));
         BigDecimal totalInterest = totalCost.subtract(amount);
 
+        List<CreditSimulationResponse.ScheduleEntry> schedule = buildSchedule(amount, monthlyRate, monthlyPayment, months);
+
         return CreditSimulationResponse.builder()
                 .amount(amount)
                 .durationMonths(months)
@@ -141,7 +201,39 @@ public class CreditService {
                 .monthlyPayment(monthlyPayment)
                 .totalCost(totalCost)
                 .totalInterest(totalInterest)
+                .schedule(schedule)
                 .build();
+    }
+
+    private List<CreditSimulationResponse.ScheduleEntry> buildSchedule(
+            BigDecimal principal, BigDecimal monthlyRate, BigDecimal monthlyPayment, int months) {
+        List<CreditSimulationResponse.ScheduleEntry> rows = new ArrayList<>(months);
+        BigDecimal remaining = principal;
+        LocalDate today = LocalDate.now();
+        for (int m = 1; m <= months; m++) {
+            BigDecimal interestPart = remaining.multiply(monthlyRate).setScale(3, RoundingMode.HALF_UP);
+            BigDecimal principalPart;
+            BigDecimal payment;
+            if (m == months) {
+                // Final instalment clears any rounding drift.
+                principalPart = remaining;
+                payment = principalPart.add(interestPart).setScale(3, RoundingMode.HALF_UP);
+                remaining = BigDecimal.ZERO;
+            } else {
+                principalPart = monthlyPayment.subtract(interestPart).setScale(3, RoundingMode.HALF_UP);
+                payment = monthlyPayment;
+                remaining = remaining.subtract(principalPart).setScale(3, RoundingMode.HALF_UP);
+            }
+            rows.add(CreditSimulationResponse.ScheduleEntry.builder()
+                    .month(m)
+                    .dueDate(today.plusMonths(m))
+                    .payment(payment)
+                    .principalPart(principalPart)
+                    .interestPart(interestPart)
+                    .remainingBalance(remaining.max(BigDecimal.ZERO))
+                    .build());
+        }
+        return rows;
     }
 
     private CreditRequestResponse mapToResponse(CreditRequest r) {

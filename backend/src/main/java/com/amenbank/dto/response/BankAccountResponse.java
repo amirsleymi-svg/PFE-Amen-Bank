@@ -13,4 +13,7 @@ public class BankAccountResponse {
     private String currency;
     private String status;
     private LocalDateTime createdAt;
+    private Long clientId;
+    private String clientName;
+    private String clientEmail;
 }

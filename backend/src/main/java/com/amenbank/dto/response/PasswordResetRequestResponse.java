@@ -12,5 +12,7 @@ public class PasswordResetRequestResponse {
     private String reviewedByName;
     private String decisionComment;
     private LocalDateTime reviewedAt;
+    private LocalDateTime completedAt;
     private LocalDateTime createdAt;
+    private String source; // SELF_SERVICE | ADMIN
 }

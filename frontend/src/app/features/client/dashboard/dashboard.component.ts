@@ -1,8 +1,10 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SidebarComponent, NavItem } from '../../../shared/components/sidebar/sidebar.component';
+import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { CLIENT_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
-import { BankAccount } from '../../../core/models/api.models';
+import { AuthService } from '../../../core/services/auth.service';
+import { BankAccount, AccountCard } from '../../../core/models/api.models';
 import { DecimalPipe } from '@angular/common';
 
 @Component({
@@ -13,71 +15,171 @@ import { DecimalPipe } from '@angular/common';
       <app-sidebar [items]="navItems" />
       <main class="main-content">
         <div class="page-header">
-          <h1>Tableau de bord</h1>
-          <p>Bienvenue dans votre espace client</p>
+          <h1 class="outfit">Tableau de bord</h1>
+          <p>Bienvenue dans votre espace premium, {{ auth.user()?.firstName }}</p>
         </div>
 
-        <div class="stats-grid">
+        <div class="section-head">
+          <h3 class="outfit">Mes comptes bancaires</h3>
+        </div>
+        <div class="stats-grid accounts-grid">
           @for (account of accounts(); track account.id) {
-            <div class="stat-card stat-primary">
+            <div class="stat-card account-card premium-gradient">
               <div class="stat-label">{{ account.accountNumber }}</div>
-              <div class="stat-value">{{ account.balance | number:'1.3-3' }} <span class="currency">TND</span></div>
-              <div style="font-size:0.75rem; color: var(--gray-500); margin-top: 0.25rem;">IBAN: {{ account.iban }}</div>
+              <div class="stat-value outfit">{{ account.balance | number:'1.3-3' }} <span class="currency">TND</span></div>
+              <div class="muted-meta">IBAN: {{ account.iban }}</div>
+              <div class="card-footer-meta">
+                <span class="badge status-badge" [class.badge-success]="account.status==='ACTIVE'" [class.badge-danger]="account.status!=='ACTIVE'">{{ account.status }}</span>
+                <span class="accent-dot"></span>
+              </div>
             </div>
           }
         </div>
 
-        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-          <a routerLink="/client/transfers/simple" class="card" style="text-decoration:none; text-align:center;">
-            <div style="font-size:2rem; margin-bottom:0.5rem;">💸</div>
-            <div style="font-weight:600;">Virement simple</div>
+        @if (cards().length) {
+          <div class="section-head">
+            <h3 class="outfit">Mes cartes premium</h3>
+          </div>
+          <div class="stats-grid cards-grid">
+            @for (card of cards(); track card.id) {
+              <div class="stat-card card-item glass-style">
+                <div class="stat-label">CARD NUMBER</div>
+                <div class="stat-value card-balance outfit">{{ card.cardNumberMasked }}</div>
+                <div class="flex-between mt-2">
+                  <div class="card-balance-sub outfit">{{ card.balance | number:'1.3-3' }} TND</div>
+                  <span class="badge status-badge" [class.badge-success]="card.status==='ACTIVE'" [class.badge-warning]="card.status==='DISABLED'" [class.badge-danger]="card.status==='EXPIRED'">{{ card.status }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="section-head">
+          <h3 class="outfit">Accès rapide</h3>
+        </div>
+        <div class="quick-grid">
+          <a routerLink="/client/transfers/simple" class="card quick-item">
+            <div class="quick-icon gold-text">💸</div>
+            <div class="quick-title">Virement simple</div>
           </a>
-          <a routerLink="/client/transfers/grouped" class="card" style="text-decoration:none; text-align:center;">
-            <div style="font-size:2rem; margin-bottom:0.5rem;">👥</div>
-            <div style="font-weight:600;">Virement groupe</div>
+          <a routerLink="/client/transfers/grouped" class="card quick-item">
+            <div class="quick-icon gold-text">👥</div>
+            <div class="quick-title">Virement groupé</div>
           </a>
-          <a routerLink="/client/transfers/permanent" class="card" style="text-decoration:none; text-align:center;">
-            <div style="font-size:2rem; margin-bottom:0.5rem;">🔄</div>
-            <div style="font-weight:600;">Virement permanent</div>
+          <a routerLink="/client/transfers/permanent" class="card quick-item">
+            <div class="quick-icon gold-text">🔄</div>
+            <div class="quick-title">Virement permanent</div>
           </a>
-          <a routerLink="/client/credits/simulate" class="card" style="text-decoration:none; text-align:center;">
-            <div style="font-size:2rem; margin-bottom:0.5rem;">📊</div>
-            <div style="font-weight:600;">Simuler un credit</div>
+          <a routerLink="/client/credits/simulate" class="card quick-item">
+            <div class="quick-icon gold-text">📊</div>
+            <div class="quick-title">Simuler un crédit</div>
           </a>
-          <a routerLink="/client/card-link" class="card" style="text-decoration:none; text-align:center;">
-            <div style="font-size:2rem; margin-bottom:0.5rem;">💳</div>
-            <div style="font-weight:600;">Lier une carte</div>
+          <a routerLink="/client/cards" class="card quick-item">
+            <div class="quick-icon gold-text">💳</div>
+            <div class="quick-title">Mes cartes</div>
           </a>
-          <a routerLink="/chatbot" class="card" style="text-decoration:none; text-align:center;">
-            <div style="font-size:2rem; margin-bottom:0.5rem;">🤖</div>
-            <div style="font-weight:600;">Chatbot</div>
+          <a routerLink="/client/chatbot" class="card quick-item">
+            <div class="quick-icon gold-text">🤖</div>
+            <div class="quick-title">Assistant IA</div>
           </a>
         </div>
       </main>
     </div>
-  `
+  `,
+  styles: [`
+    .section-head h3 {
+      margin: 2rem 0 1rem;
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .accounts-grid, .cards-grid {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .premium-gradient {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      border: 1px solid var(--primary-light);
+    }
+
+    .premium-gradient .stat-label { color: var(--accent); opacity: 0.8; }
+    .premium-gradient .stat-value { color: white; margin-top: 0.75rem; }
+
+    .glass-style {
+      background: white;
+      border: 1px solid var(--gray-100);
+      box-shadow: var(--shadow);
+    }
+
+    .account-card .muted-meta {
+      font-size: 0.7rem;
+      color: var(--gray-400);
+      margin-top: 0.5rem;
+      font-family: monospace;
+    }
+
+    .card-footer-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+    }
+
+    .accent-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .quick-item {
+      text-decoration: none;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: white;
+      border: 1px solid var(--gray-50);
+      border-radius: var(--radius);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .quick-item:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent);
+    }
+
+    .quick-icon { font-size: 1.75rem; margin-bottom: 0.75rem; }
+    .gold-text { filter: drop-shadow(0 2px 4px rgba(197, 160, 89, 0.3)); }
+    .quick-title { font-weight: 600; color: var(--primary); font-size: 0.85rem; text-align: center; }
+  `]
 })
 export class ClientDashboardComponent implements OnInit {
   accounts = signal<BankAccount[]>([]);
-  navItems: NavItem[] = [
-    { label: 'Tableau de bord', route: '/client/dashboard', icon: '📊' },
-    { label: 'Mes comptes', route: '/client/accounts', icon: '🏦' },
-    { label: 'Transactions', route: '/client/transactions', icon: '📋' },
-    { label: 'Virement simple', route: '/client/transfers/simple', icon: '💸' },
-    { label: 'Virement groupe', route: '/client/transfers/grouped', icon: '👥' },
-    { label: 'Virement permanent', route: '/client/transfers/permanent', icon: '🔄' },
-    { label: 'Simuler credit', route: '/client/credits/simulate', icon: '🧮' },
-    { label: 'Demander credit', route: '/client/credits/request', icon: '📝' },
-    { label: 'Mes credits', route: '/client/credits/list', icon: '💰' },
-    { label: 'Lier une carte', route: '/client/card-link', icon: '💳' },
-    { label: 'Chatbot', route: '/chatbot', icon: '🤖' },
-  ];
+  cards = signal<AccountCard[]>([]);
+  navItems = CLIENT_NAV;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, public auth: AuthService) {}
 
   ngOnInit() {
-    this.api.getAccounts().subscribe(res => {
-      if (res.data) this.accounts.set(res.data);
+    this.api.getAccounts().subscribe({
+      next: res => { if (res.data) this.accounts.set(res.data); },
+      error: () => {}
+    });
+    this.api.getClientCards().subscribe({
+      next: res => { if (res.data) this.cards.set(res.data); },
+      error: () => {}
     });
   }
 }

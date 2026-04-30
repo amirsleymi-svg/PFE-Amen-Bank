@@ -17,7 +17,7 @@ public class TwoFactorCode {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 6)
+    @Column(nullable = false, length = 100)
     private String code;
 
     @Enumerated(EnumType.STRING)

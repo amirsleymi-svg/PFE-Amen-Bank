@@ -12,6 +12,7 @@ import com.amenbank.exception.BusinessException;
 import com.amenbank.repository.RefreshTokenRepository;
 import com.amenbank.repository.UserRepository;
 import com.amenbank.security.JwtService;
+import com.amenbank.security.TokenHasher;
 import com.amenbank.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +34,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final OtpService otpService;
     private final AuditService auditService;
+    private final TokenHasher tokenHasher;
+    private final RefreshTokenRevoker refreshTokenRevoker;
 
     @Value("${app.account-lock.max-attempts}")
     private int maxAttempts;
@@ -46,9 +49,15 @@ public class AuthService {
     @Transactional
     public Object login(LoginRequest request) {
         User user = userRepository.findByEmailOrUsername(request.getLogin(), request.getLogin())
-                .orElseThrow(() -> new BusinessException("Invalid credentials", "INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED));
+                .orElseGet(() -> {
+                    auditService.log(null, "LOGIN_FAILED",
+                            "Unknown login identifier: " + request.getLogin());
+                    throw new BusinessException("Invalid credentials", "INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
+                });
 
         if (user.isAccountLocked()) {
+            auditService.log(user, "LOGIN_BLOCKED_LOCKED",
+                    "Login attempt on locked account " + user.getEmail());
             throw new BusinessException("Account is locked. Try again later.", "ACCOUNT_LOCKED", HttpStatus.FORBIDDEN);
         }
 
@@ -57,6 +66,8 @@ public class AuthService {
         }
 
         if (user.getStatus() == User.UserStatus.DISABLED) {
+            auditService.log(user, "LOGIN_BLOCKED_DISABLED",
+                    "Login attempt on disabled account " + user.getEmail());
             throw new BusinessException("Account is disabled", "ACCOUNT_DISABLED", HttpStatus.FORBIDDEN);
         }
 
@@ -108,15 +119,16 @@ public class AuthService {
 
     @Transactional
     public AuthResponse refreshToken(String token) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(tokenHasher.sha256Hex(token))
                 .orElseThrow(() -> new BusinessException("Invalid refresh token", "INVALID_REFRESH_TOKEN", HttpStatus.UNAUTHORIZED));
 
         if (refreshToken.getRevoked() || refreshToken.isExpired()) {
             throw new BusinessException("Refresh token expired or revoked", "REFRESH_TOKEN_EXPIRED", HttpStatus.UNAUTHORIZED);
         }
 
-        refreshToken.setRevoked(true);
-        refreshTokenRepository.save(refreshToken);
+        // Commit the revoke in its own transaction so the old token is dead
+        // even if generateAuthResponse fails afterwards.
+        refreshTokenRevoker.revokeAndCommit(refreshToken);
 
         User user = refreshToken.getUser();
         return generateAuthResponse(user);
@@ -135,6 +147,9 @@ public class AuthService {
         int attempts = user.getFailedLoginAttempts() + 1;
         user.setFailedLoginAttempts(attempts);
 
+        auditService.log(user, "LOGIN_FAILED",
+                "Invalid password for " + user.getEmail() + " (attempt " + attempts + "/" + maxAttempts + ")");
+
         if (attempts >= maxAttempts) {
             user.setStatus(User.UserStatus.LOCKED);
             user.setLockedUntil(LocalDateTime.now().plusMinutes(lockDurationMinutes));
@@ -150,7 +165,7 @@ public class AuthService {
 
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
-                .token(refreshTokenStr)
+                .token(tokenHasher.sha256Hex(refreshTokenStr))
                 .expiresAt(LocalDateTime.now().plusSeconds(refreshTokenExpiration / 1000))
                 .build();
         refreshTokenRepository.save(refreshToken);
@@ -175,6 +190,7 @@ public class AuthService {
                 .role(user.getRole().getName())
                 .status(user.getStatus().name())
                 .twoFactorEnabled(user.getTwoFactorEnabled())
+                .rootAdmin(AdminService.isRootAdmin(user))
                 .createdAt(user.getCreatedAt())
                 .lastLoginAt(user.getLastLoginAt())
                 .build();

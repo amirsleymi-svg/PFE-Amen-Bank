@@ -24,7 +24,7 @@ public class Notification {
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false)
     @Builder.Default
     private NotificationType type = NotificationType.INFO;
 
@@ -41,6 +41,6 @@ public class Notification {
     }
 
     public enum NotificationType {
-        INFO, WARNING, SUCCESS, ERROR
+        INFO, WARNING, SUCCESS, ERROR, TRANSFER, CREDIT, FRAUD, CARD, REPORT
     }
 }

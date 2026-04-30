@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -35,7 +35,7 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   `
 })
-export class ResetPasswordComponent {
+export class ResetPasswordComponent implements OnInit {
   password = '';
   confirm = '';
   loading = signal(false);
@@ -43,6 +43,12 @@ export class ResetPasswordComponent {
   success = signal('');
 
   constructor(private auth: AuthService, private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    // Token-based flow: drop any existing session so the password reset
+    // isn't confused with a currently-logged-in user on this browser.
+    this.auth.clearSession();
+  }
 
   onSubmit() {
     if (this.password !== this.confirm) { this.error.set('Les mots de passe ne correspondent pas'); return; }

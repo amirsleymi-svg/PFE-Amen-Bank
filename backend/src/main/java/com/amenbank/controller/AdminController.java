@@ -1,10 +1,7 @@
 package com.amenbank.controller;
 
-import com.amenbank.dto.request.CreateUserRequest;
-import com.amenbank.dto.request.DecisionRequest;
-import com.amenbank.dto.request.UpdateUserRequest;
+import com.amenbank.dto.request.*;
 import com.amenbank.dto.response.*;
-import com.amenbank.dto.response.PasswordResetRequestResponse;
 import com.amenbank.entity.User;
 import com.amenbank.repository.UserRepository;
 import com.amenbank.security.UserDetailsImpl;
@@ -28,8 +25,9 @@ public class AdminController {
     private final AdminService adminService;
     private final RegistrationService registrationService;
     private final PasswordResetService passwordResetService;
-    private final CreditService creditService;
+    private final FraudDetectionService fraudDetectionService;
     private final TransferService transferService;
+    private final CreditService creditService;
     private final UserRepository userRepository;
 
     // ===== DASHBOARD =====
@@ -67,7 +65,7 @@ public class AdminController {
     @PutMapping("/users/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long id,
-            @RequestBody UpdateUserRequest request,
+            @Valid @RequestBody UpdateUserRequest request,
             @AuthenticationPrincipal UserDetailsImpl auth) {
         User admin = userRepository.findById(auth.getId()).orElseThrow();
         return ResponseEntity.ok(ApiResponse.success("User updated", adminService.updateUser(id, request, admin)));
@@ -88,7 +86,10 @@ public class AdminController {
             @RequestBody Map<String, String> request,
             @AuthenticationPrincipal UserDetailsImpl auth) {
         User admin = userRepository.findById(auth.getId()).orElseThrow();
-        String newRole = request.get("role");
+        String newRole = request != null ? request.get("role") : null;
+        if (newRole == null || newRole.isBlank()) {
+            throw new com.amenbank.exception.BusinessException("Le role est requis", "MISSING_ROLE");
+        }
         return ResponseEntity.ok(ApiResponse.success("Role updated", adminService.changeUserRole(id, newRole, admin)));
     }
 
@@ -108,6 +109,33 @@ public class AdminController {
         User admin = userRepository.findById(auth.getId()).orElseThrow();
         adminService.deactivateUser(id, admin);
         return ResponseEntity.ok(ApiResponse.success("User deactivated"));
+    }
+
+    // ===== BANK ACCOUNTS =====
+
+    @GetMapping("/bank-accounts")
+    public ResponseEntity<ApiResponse<Page<BankAccountResponse>>> getBankAccounts(
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success("Bank accounts retrieved",
+                adminService.getAllBankAccounts(pageable)));
+    }
+
+    @PostMapping("/bank-accounts/{id}/activate")
+    public ResponseEntity<ApiResponse<Void>> activateBankAccount(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        adminService.activateBankAccount(id, admin);
+        return ResponseEntity.ok(ApiResponse.success("Bank account activated"));
+    }
+
+    @PostMapping("/bank-accounts/{id}/deactivate")
+    public ResponseEntity<ApiResponse<Void>> deactivateBankAccount(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        adminService.deactivateBankAccount(id, admin);
+        return ResponseEntity.ok(ApiResponse.success("Bank account deactivated"));
     }
 
     // ===== REGISTRATION REQUESTS =====
@@ -142,9 +170,15 @@ public class AdminController {
 
     @GetMapping("/password-reset-requests")
     public ResponseEntity<ApiResponse<Page<PasswordResetRequestResponse>>> getPasswordResetRequests(
-            @PageableDefault(size = 20) Pageable pageable) {
+            @RequestParam(defaultValue = "ALL") String status,
+            @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success("Requests retrieved",
-                passwordResetService.getPendingRequests(pageable)));
+                passwordResetService.getAllRequests(status, pageable)));
+    }
+
+    @GetMapping("/password-reset-requests/stats")
+    public ResponseEntity<ApiResponse<com.amenbank.dto.response.PasswordResetStatsResponse>> getPasswordResetStats() {
+        return ResponseEntity.ok(ApiResponse.success("Stats retrieved", passwordResetService.getStats()));
     }
 
     @PostMapping("/password-reset-requests/{id}/approve")
@@ -167,60 +201,13 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success("Password reset rejected"));
     }
 
-    // ===== TRANSFERS =====
-
-    @GetMapping("/transfers/pending")
-    public ResponseEntity<ApiResponse<Page<TransactionResponse>>> getPendingTransfers(
-            @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success("Pending transfers", transferService.getPendingTransfers(pageable)));
-    }
-
-    @PostMapping("/transfers/{id}/approve")
-    public ResponseEntity<ApiResponse<Void>> approveTransfer(
+    @DeleteMapping("/password-reset-requests/{id}")
+    public ResponseEntity<ApiResponse<Void>> deletePasswordResetRequest(
             @PathVariable Long id,
-            @RequestBody(required = false) DecisionRequest request,
             @AuthenticationPrincipal UserDetailsImpl auth) {
         User admin = userRepository.findById(auth.getId()).orElseThrow();
-        transferService.approveTransfer(id, admin, request != null ? request.getComment() : null);
-        return ResponseEntity.ok(ApiResponse.success("Transfer approved"));
-    }
-
-    @PostMapping("/transfers/{id}/reject")
-    public ResponseEntity<ApiResponse<Void>> rejectTransfer(
-            @PathVariable Long id,
-            @RequestBody(required = false) DecisionRequest request,
-            @AuthenticationPrincipal UserDetailsImpl auth) {
-        User admin = userRepository.findById(auth.getId()).orElseThrow();
-        transferService.rejectTransfer(id, admin, request != null ? request.getComment() : null);
-        return ResponseEntity.ok(ApiResponse.success("Transfer rejected"));
-    }
-
-    // ===== CREDITS =====
-
-    @GetMapping("/credits/pending")
-    public ResponseEntity<ApiResponse<Page<CreditRequestResponse>>> getPendingCredits(
-            @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success("Pending credits", creditService.getPendingCredits(pageable)));
-    }
-
-    @PostMapping("/credits/{id}/approve")
-    public ResponseEntity<ApiResponse<Void>> approveCredit(
-            @PathVariable Long id,
-            @RequestBody(required = false) DecisionRequest request,
-            @AuthenticationPrincipal UserDetailsImpl auth) {
-        User admin = userRepository.findById(auth.getId()).orElseThrow();
-        creditService.approve(id, admin, request != null ? request.getComment() : null);
-        return ResponseEntity.ok(ApiResponse.success("Credit approved"));
-    }
-
-    @PostMapping("/credits/{id}/reject")
-    public ResponseEntity<ApiResponse<Void>> rejectCredit(
-            @PathVariable Long id,
-            @RequestBody(required = false) DecisionRequest request,
-            @AuthenticationPrincipal UserDetailsImpl auth) {
-        User admin = userRepository.findById(auth.getId()).orElseThrow();
-        creditService.reject(id, admin, request != null ? request.getComment() : null);
-        return ResponseEntity.ok(ApiResponse.success("Credit rejected"));
+        passwordResetService.deleteRequest(id, admin);
+        return ResponseEntity.ok(ApiResponse.success("Password reset request deleted"));
     }
 
     // ===== AUDIT LOGS =====
@@ -255,4 +242,143 @@ public class AdminController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success("Reports retrieved", adminService.getDailyReports(pageable)));
     }
+
+    @PostMapping("/reports/daily/{id}/review")
+    public ResponseEntity<ApiResponse<Void>> reviewReport(
+            @PathVariable Long id,
+            @RequestBody ReviewReportRequest request,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        adminService.reviewReport(id, request.getComment(), request.getRating(), admin);
+        return ResponseEntity.ok(ApiResponse.success("Report reviewed"));
+    }
+
+    @DeleteMapping("/reports/daily/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteDailyReport(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        adminService.deleteDailyReport(id, admin);
+        return ResponseEntity.ok(ApiResponse.success("Report deleted"));
+    }
+
+    // ===== TRANSFER MONITORING (read-only) =====
+
+    @GetMapping("/transfers")
+    public ResponseEntity<ApiResponse<Page<TransactionResponse>>> getAllTransfers(
+            @RequestParam(required = false) String status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        if (status != null) {
+            return ResponseEntity.ok(ApiResponse.success("Transfers retrieved", transferService.getTransfersByStatus(status, pageable)));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Transfers retrieved", transferService.getAllTransfers(pageable)));
+    }
+
+    // ===== CREDIT MONITORING (read-only) =====
+
+    @GetMapping("/credits")
+    public ResponseEntity<ApiResponse<Page<CreditRequestResponse>>> getAllCredits(
+            @RequestParam(required = false) String status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        if (status != null) {
+            return ResponseEntity.ok(ApiResponse.success("Credits retrieved", creditService.getCreditsByStatus(status, pageable)));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Credits retrieved", creditService.getAllCredits(pageable)));
+    }
+
+    // ===== FRAUD ALERTS =====
+
+    @GetMapping("/fraud-alerts")
+    public ResponseEntity<ApiResponse<Page<FraudAlertResponse>>> getFraudAlerts(
+            @RequestParam(required = false) String status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        if (status != null) {
+            return ResponseEntity.ok(ApiResponse.success("Fraud alerts", fraudDetectionService.getAlertsByStatus(status, pageable)));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Fraud alerts", fraudDetectionService.getAllAlerts(pageable)));
+    }
+
+    @PostMapping("/fraud-alerts/{id}/status")
+    public ResponseEntity<ApiResponse<Void>> updateFraudAlertStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        String status = request != null ? request.get("status") : null;
+        if (status == null || status.isBlank()) {
+            throw new com.amenbank.exception.BusinessException("Le statut est requis", "MISSING_STATUS");
+        }
+        fraudDetectionService.updateAlertStatus(id, status, request.get("comment"), admin);
+        return ResponseEntity.ok(ApiResponse.success("Alert status updated"));
+    }
+
+    /**
+     * Confirm a fraud alert and freeze the offending client in one transaction:
+     * the alert is marked RESOLVED, then the client's user, bank accounts, cards,
+     * and pending transactions are all disabled / cancelled.
+     */
+    @PostMapping("/fraud-alerts/{id}/confirm-and-freeze")
+    public ResponseEntity<ApiResponse<AdminService.FreezeClientResult>> confirmFraudAndFreezeClient(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        String comment = request != null ? request.getOrDefault("comment", "") : "";
+        Long clientId = fraudDetectionService.resolveAlertAndGetClientId(id, comment, admin);
+        AdminService.FreezeClientResult result = adminService.freezeClientOnFraud(clientId, admin,
+                "Fraude confirmee (alerte #" + id + ")" + (comment.isBlank() ? "" : " - " + comment));
+        return ResponseEntity.ok(ApiResponse.success("Client freeze completed", result));
+    }
+
+    // ===== SECURITY INCIDENTS =====
+
+    @GetMapping("/security/incidents")
+    public ResponseEntity<ApiResponse<Page<SecurityIncidentResponse>>> getSecurityIncidents(
+            @PageableDefault(size = 30) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success("Security incidents", adminService.getSecurityIncidents(pageable)));
+    }
+
+    @GetMapping("/security/suspicious-users")
+    public ResponseEntity<ApiResponse<java.util.List<SuspiciousUserResponse>>> getSuspiciousUsers(
+            @RequestParam(defaultValue = "24") int hours,
+            @RequestParam(defaultValue = "3") int threshold) {
+        return ResponseEntity.ok(ApiResponse.success("Suspicious users",
+                adminService.getSuspiciousUsers(hours, threshold)));
+    }
+
+    @PostMapping("/security/block/{userId}")
+    public ResponseEntity<ApiResponse<Void>> blockSuspiciousUser(
+            @PathVariable Long userId,
+            @RequestBody(required = false) Map<String, String> request,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        String reason = request != null ? request.get("reason") : null;
+        adminService.blockSuspiciousUser(userId, admin, reason);
+        return ResponseEntity.ok(ApiResponse.success("User blocked"));
+    }
+
+    @GetMapping("/security/blocked-ips")
+    public ResponseEntity<ApiResponse<java.util.List<com.amenbank.dto.response.BlockedIpResponse>>> getBlockedIps() {
+        return ResponseEntity.ok(ApiResponse.success("Blocked IPs", adminService.getBlockedIps()));
+    }
+
+    @PostMapping("/security/block-ip")
+    public ResponseEntity<ApiResponse<com.amenbank.dto.response.BlockedIpResponse>> blockIp(
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        String ip = request != null ? request.get("ip") : null;
+        String reason = request != null ? request.get("reason") : null;
+        return ResponseEntity.ok(ApiResponse.success("IP blocked", adminService.blockIp(ip, reason, admin)));
+    }
+
+    @DeleteMapping("/security/block-ip/{id}")
+    public ResponseEntity<ApiResponse<Void>> unblockIp(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User admin = userRepository.findById(auth.getId()).orElseThrow();
+        adminService.unblockIp(id, admin);
+        return ResponseEntity.ok(ApiResponse.success("IP unblocked"));
+    }
+
 }

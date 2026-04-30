@@ -44,7 +44,11 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(@RequestBody Map<String, String> request) {
-        AuthResponse response = authService.refreshToken(request.get("refreshToken"));
+        String refreshToken = request != null ? request.get("refreshToken") : null;
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new com.amenbank.exception.BusinessException("Refresh token is required", "MISSING_TOKEN");
+        }
+        AuthResponse response = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(ApiResponse.success("Token refreshed", response));
     }
 
@@ -71,7 +75,8 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.submitRequest(request.getEmail());
-        return ResponseEntity.ok(ApiResponse.success("Password reset request submitted. An administrator will review it."));
+        return ResponseEntity.ok(ApiResponse.success(
+                "Si un compte existe pour cet email, un lien de reinitialisation vient d'etre envoye."));
     }
 
     @PostMapping("/reset-password")

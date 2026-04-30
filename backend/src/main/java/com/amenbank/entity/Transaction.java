@@ -1,12 +1,15 @@
 package com.amenbank.entity;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Index;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "transactions", indexes = {
+        @Index(name = "idx_tx_source_created", columnList = "source_account_id, created_at")
+})
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Transaction {
 
@@ -77,7 +80,7 @@ public class Transaction {
 
     public enum TransactionType {
         TRANSFER_SIMPLE, TRANSFER_GROUPED, TRANSFER_PERMANENT,
-        CREDIT_DISBURSEMENT, CARD_LINKING, CREDIT_REPAYMENT
+        CREDIT_DISBURSEMENT, CARD_LINKING, CREDIT_REPAYMENT, CARD_RECHARGE
     }
 
     public enum TransactionStatus {

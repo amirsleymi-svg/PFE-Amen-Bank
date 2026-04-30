@@ -2,10 +2,12 @@ package com.amenbank.controller;
 
 import com.amenbank.dto.request.*;
 import com.amenbank.dto.response.*;
+import com.amenbank.dto.response.CardResponse;
 import com.amenbank.entity.User;
 import com.amenbank.repository.UserRepository;
 import com.amenbank.security.UserDetailsImpl;
 import com.amenbank.service.AccountService;
+import com.amenbank.service.CardService;
 import com.amenbank.service.CreditService;
 import com.amenbank.service.TransferService;
 import com.amenbank.service.OtpService;
@@ -27,6 +29,7 @@ import java.util.List;
 public class ClientController {
 
     private final AccountService accountService;
+    private final CardService cardService;
     private final TransferService transferService;
     private final CreditService creditService;
     private final OtpService otpService;
@@ -47,15 +50,6 @@ public class ClientController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success("Transactions retrieved",
                 accountService.getAccountTransactions(id, auth.getId(), pageable)));
-    }
-
-    @PostMapping("/accounts/link-card")
-    public ResponseEntity<ApiResponse<Void>> linkCard(
-            @Valid @RequestBody LinkCardRequest request,
-            @AuthenticationPrincipal UserDetailsImpl auth) {
-        User user = userRepository.findById(auth.getId()).orElseThrow();
-        accountService.linkCard(auth.getId(), request, user);
-        return ResponseEntity.ok(ApiResponse.success("Card linked successfully"));
     }
 
     // ===== TRANSFERS =====
@@ -93,6 +87,60 @@ public class ClientController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success("Transfers retrieved",
                 transferService.getClientTransfers(auth.getId(), pageable)));
+    }
+
+    // ===== CARDS =====
+
+    @GetMapping("/cards")
+    public ResponseEntity<ApiResponse<List<CardResponse>>> getCards(
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        return ResponseEntity.ok(ApiResponse.success("Cards retrieved", cardService.getClientCards(auth.getId())));
+    }
+
+    @PostMapping("/cards/request")
+    public ResponseEntity<ApiResponse<CardResponse>> requestCard(
+            @Valid @RequestBody CreateCardRequest request,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User user = userRepository.findById(auth.getId()).orElseThrow();
+        CardResponse card = cardService.requestNewCard(request.getAccountId(), auth.getId(), user);
+        return ResponseEntity.ok(ApiResponse.success("Votre carte bancaire est creee avec succes", card));
+    }
+
+    @PostMapping("/cards/{id}/transfer")
+    public ResponseEntity<ApiResponse<CardResponse>> cardTransfer(
+            @PathVariable Long id,
+            @Valid @RequestBody CardTransferRequest request,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User user = userRepository.findById(auth.getId()).orElseThrow();
+        CardResponse card = cardService.transferBetweenCardAndAccount(id, auth.getId(), request, user);
+        return ResponseEntity.ok(ApiResponse.success("Virement effectue", card));
+    }
+
+    @PostMapping("/cards/{id}/activate")
+    public ResponseEntity<ApiResponse<Void>> activateCard(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User user = userRepository.findById(auth.getId()).orElseThrow();
+        cardService.activateCard(id, auth.getId(), user);
+        return ResponseEntity.ok(ApiResponse.success("Card activated"));
+    }
+
+    @PostMapping("/cards/{id}/deactivate")
+    public ResponseEntity<ApiResponse<Void>> deactivateCard(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User user = userRepository.findById(auth.getId()).orElseThrow();
+        cardService.deactivateCard(id, auth.getId(), user);
+        return ResponseEntity.ok(ApiResponse.success("Card deactivated"));
+    }
+
+    @DeleteMapping("/cards/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteCard(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
+        User user = userRepository.findById(auth.getId()).orElseThrow();
+        cardService.deleteCard(id, auth.getId(), user);
+        return ResponseEntity.ok(ApiResponse.success("Card deleted"));
     }
 
     // ===== TRANSFERS 2FA =====

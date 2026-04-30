@@ -2,11 +2,12 @@ package com.amenbank.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "account_cards")
+@Table(name = "account_cards", uniqueConstraints = @UniqueConstraint(name = "uk_one_card_per_account", columnNames = "account_id"))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class AccountCard {
 
@@ -22,6 +23,10 @@ public class AccountCard {
 
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
+
+    @Column(nullable = false, precision = 15, scale = 3)
+    @Builder.Default
+    private BigDecimal balance = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)

@@ -10,4 +10,6 @@ public interface AccountCardRepository extends JpaRepository<AccountCard, Long> 
     List<AccountCard> findByAccountId(Long accountId);
     Optional<AccountCard> findByCardToken(String cardToken);
     boolean existsByCardToken(String cardToken);
+    boolean existsByAccountId(Long accountId);
+    Optional<AccountCard> findByIdAndClientId(Long id, Long clientId);
 }

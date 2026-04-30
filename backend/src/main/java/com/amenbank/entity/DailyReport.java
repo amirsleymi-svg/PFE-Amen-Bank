@@ -39,6 +39,9 @@ public class DailyReport {
     @Column(name = "review_comment", length = 500)
     private String reviewComment;
 
+    @Column(name = "rating", columnDefinition = "TINYINT")
+    private Integer rating;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

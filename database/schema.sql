@@ -330,7 +330,7 @@ CREATE TABLE notifications (
     user_id BIGINT NOT NULL,
     title VARCHAR(200) NOT NULL,
     message TEXT NOT NULL,
-    type ENUM('INFO', 'WARNING', 'SUCCESS', 'ERROR') NOT NULL DEFAULT 'INFO',
+    type ENUM('INFO', 'WARNING', 'SUCCESS', 'ERROR', 'TRANSFER', 'CREDIT', 'FRAUD', 'CARD', 'REPORT') NOT NULL DEFAULT 'INFO',
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -348,6 +348,7 @@ CREATE TABLE daily_reports (
     status ENUM('DRAFT', 'SUBMITTED', 'REVIEWED') NOT NULL DEFAULT 'DRAFT',
     reviewed_by BIGINT NULL,
     review_comment VARCHAR(500),
+    rating TINYINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES users(id),
@@ -355,6 +356,25 @@ CREATE TABLE daily_reports (
     UNIQUE KEY uk_employee_date (employee_id, report_date),
     INDEX idx_report_date (report_date),
     INDEX idx_report_status (status)
+) ENGINE=InnoDB;
+
+-- Fraud alerts
+CREATE TABLE fraud_alerts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    transaction_id BIGINT NULL,
+    alert_type ENUM('HIGH_AMOUNT', 'SUSPICIOUS_PATTERN', 'UNUSUAL_DESTINATION', 'VELOCITY') NOT NULL,
+    description TEXT NOT NULL,
+    severity ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL') NOT NULL DEFAULT 'MEDIUM',
+    status ENUM('OPEN', 'INVESTIGATING', 'RESOLVED', 'DISMISSED') NOT NULL DEFAULT 'OPEN',
+    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reviewed_by BIGINT NULL,
+    reviewed_at TIMESTAMP NULL,
+    review_comment VARCHAR(500),
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
+    FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_fraud_status (status),
+    INDEX idx_fraud_severity (severity),
+    INDEX idx_fraud_detected (detected_at)
 ) ENGINE=InnoDB;
 
 -- Refresh tokens (for JWT refresh)

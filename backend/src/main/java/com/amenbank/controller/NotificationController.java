@@ -40,10 +40,14 @@ public class NotificationController {
     }
 
     @PostMapping("/{id}/read")
-    public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> markAsRead(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetailsImpl auth) {
         notificationRepository.findById(id).ifPresent(n -> {
-            n.setIsRead(true);
-            notificationRepository.save(n);
+            if (n.getUser().getId().equals(auth.getId())) {
+                n.setIsRead(true);
+                notificationRepository.save(n);
+            }
         });
         return ResponseEntity.ok(ApiResponse.success("Marked as read"));
     }

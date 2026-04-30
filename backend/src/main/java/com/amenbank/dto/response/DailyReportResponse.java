@@ -14,5 +14,6 @@ public class DailyReportResponse {
     private String status;
     private String reviewedByName;
     private String reviewComment;
+    private Integer rating;
     private LocalDateTime createdAt;
 }

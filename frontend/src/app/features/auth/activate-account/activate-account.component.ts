@@ -64,6 +64,9 @@ export class ActivateAccountComponent implements OnInit {
   constructor(private route: ActivatedRoute, private auth: AuthService) {}
 
   ngOnInit() {
+    // Token-based flow: drop any existing session so the new account activation
+    // isn't confused with a currently-logged-in user (e.g. admin who approved).
+    this.auth.clearSession();
     this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
     if (!this.token) {
       this.tokenError.set('Token d\'activation manquant ou invalide.');

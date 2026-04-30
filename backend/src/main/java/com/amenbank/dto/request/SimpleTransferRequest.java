@@ -19,4 +19,7 @@ public class SimpleTransferRequest {
     private BigDecimal amount;
 
     private String description;
+
+    @NotBlank(message = "OTP code is required")
+    private String otpCode;
 }

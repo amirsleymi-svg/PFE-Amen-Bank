@@ -2,6 +2,25 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
+function dashboardPathFor(role: string | null | undefined): string | null {
+  switch (role) {
+    case 'CLIENT': return '/client/dashboard';
+    case 'EMPLOYEE': return '/employee/dashboard';
+    case 'ADMIN': return '/admin/dashboard';
+    default: return null;
+  }
+}
+
+function sendToOwnDashboard(auth: AuthService, router: Router): void {
+  const path = dashboardPathFor(auth.userRole());
+  if (path) {
+    router.navigate([path]);
+  } else {
+    auth.clearSession();
+    router.navigate(['/login']);
+  }
+}
+
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -20,7 +39,7 @@ export const roleGuard = (allowedRoles: string[]): CanActivateFn => {
     }
     const role = auth.userRole();
     if (role && allowedRoles.includes(role)) return true;
-    router.navigate(['/login']);
+    sendToOwnDashboard(auth, router);
     return false;
   };
 };
@@ -29,10 +48,8 @@ export const guestGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   if (!auth.isLoggedIn()) return true;
-  const role = auth.userRole();
-  if (role === 'CLIENT') router.navigate(['/client']);
-  else if (role === 'EMPLOYEE') router.navigate(['/employee']);
-  else if (role === 'ADMIN') router.navigate(['/admin']);
-  else router.navigate(['/']);
+  sendToOwnDashboard(auth, router);
   return false;
 };
+
+export const landingGuard: CanActivateFn = guestGuard;

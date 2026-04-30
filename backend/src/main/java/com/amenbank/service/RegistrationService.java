@@ -8,7 +8,9 @@ import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.EmailService;
 import com.amenbank.notification.NotificationService;
 import com.amenbank.repository.*;
+import com.amenbank.security.TokenHasher;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -32,6 +35,10 @@ public class RegistrationService {
     private final EmailService emailService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final TokenHasher tokenHasher;
+
+    @Value("${app.initial-balance:100.000}")
+    private BigDecimal initialBalance;
 
     @Transactional
     public void submitRequest(RegistrationRequestDto dto) {
@@ -96,15 +103,16 @@ public class RegistrationService {
         String token = UUID.randomUUID().toString();
         ActivationToken activationToken = ActivationToken.builder()
                 .user(newUser)
-                .token(token)
+                .token(tokenHasher.sha256Hex(token))
                 .expiresAt(LocalDateTime.now().plusHours(24))
                 .build();
         activationTokenRepository.save(activationToken);
 
-        // Create default bank account
+        // Create default bank account with initial balance
         BankAccount account = BankAccount.builder()
                 .accountNumber(generateAccountNumber())
                 .iban(generateIban())
+                .balance(initialBalance)
                 .client(newUser)
                 .build();
         bankAccountRepository.save(account);
@@ -135,7 +143,7 @@ public class RegistrationService {
 
     @Transactional
     public void activateAccount(String token, String password) {
-        ActivationToken activationToken = activationTokenRepository.findByToken(token)
+        ActivationToken activationToken = activationTokenRepository.findByToken(tokenHasher.sha256Hex(token))
                 .orElseThrow(() -> new BusinessException("Invalid activation token", "INVALID_TOKEN", HttpStatus.BAD_REQUEST));
 
         if (activationToken.getUsed()) {

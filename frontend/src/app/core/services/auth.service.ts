@@ -6,7 +6,7 @@ import { ApiResponse, AuthResponse, User } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly API = 'http://localhost:8080/api/auth';
+  private readonly API = 'https://localhost:8443/api/auth';
   private currentUser = signal<User | null>(null);
 
   user = this.currentUser.asReadonly();
@@ -15,6 +15,15 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {
     this.loadStoredUser();
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
   }
 
   login(login: string, password: string): Observable<ApiResponse> {
@@ -32,7 +41,7 @@ export class AuthService {
   }
 
   refreshToken(): Observable<ApiResponse<AuthResponse>> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
     return this.http.post<ApiResponse<AuthResponse>>(`${this.API}/refresh`, { refreshToken }).pipe(
       tap(res => {
         if (res.success && res.data) {
@@ -61,31 +70,56 @@ export class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('accessToken');
+    return sessionStorage.getItem('accessToken');
   }
 
   setSession(auth: AuthResponse): void {
-    localStorage.setItem('accessToken', auth.accessToken);
-    localStorage.setItem('refreshToken', auth.refreshToken);
-    localStorage.setItem('user', JSON.stringify(auth.user));
+    sessionStorage.setItem('accessToken', auth.accessToken);
+    sessionStorage.setItem('refreshToken', auth.refreshToken);
+    sessionStorage.setItem('user', JSON.stringify(auth.user));
     this.currentUser.set(auth.user);
   }
 
-  private clearSession(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+  clearSession(): void {
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('user');
     this.currentUser.set(null);
   }
 
   private loadStoredUser(): void {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        this.currentUser.set(JSON.parse(userStr));
-      } catch {
+    // One-time migration from legacy localStorage (pre-per-tab sessions).
+    // If localStorage has leftovers, drop them — each tab now starts fresh in sessionStorage.
+    if (localStorage.getItem('accessToken') || localStorage.getItem('refreshToken') || localStorage.getItem('user')) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+    }
+
+    const token = sessionStorage.getItem('accessToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
+    const userStr = sessionStorage.getItem('user');
+
+    if (!userStr) {
+      this.clearSession();
+      return;
+    }
+
+    const accessValid = !!token && !this.isTokenExpired(token);
+    if (!accessValid && !refreshToken) {
+      this.clearSession();
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(userStr) as User;
+      if (!parsed || !parsed.role) {
         this.clearSession();
+        return;
       }
+      this.currentUser.set(parsed);
+    } catch {
+      this.clearSession();
     }
   }
 }

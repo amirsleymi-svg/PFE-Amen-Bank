@@ -12,7 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="auth-header">
           <div class="logo">Amen Bank</div>
           <h1>Mot de passe oublie</h1>
-          <p>Entrez votre email. Un administrateur examinera votre demande.</p>
+          <p>Entrez votre email. Si un compte existe, un lien de reinitialisation vous sera envoye immediatement.</p>
         </div>
         @if (success()) { <div class="alert alert-success">{{ success() }}</div> }
         @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
@@ -23,7 +23,7 @@ import { AuthService } from '../../../core/services/auth.service';
               <input type="email" [(ngModel)]="email" name="email" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block" [disabled]="loading()">
-              {{ loading() ? 'Envoi...' : 'Envoyer la demande' }}
+              {{ loading() ? 'Envoi...' : 'Envoyer le lien' }}
             </button>
           </form>
         }

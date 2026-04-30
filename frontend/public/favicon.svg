@@ -1,0 +1,20 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#222222" />
+      <stop offset="100%" stop-color="#0a0a0a" />
+    </linearGradient>
+    <linearGradient id="fg" x1="60" y1="30" x2="140" y2="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#cccccc" />
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="188" height="188" rx="44" fill="url(#bg)" />
+  <path d="M56 154 L92 42 L100 42 L72 138 L56 154 Z" fill="url(#fg)" />
+  <path d="M144 154 L108 42 L100 42 L128 138 L144 154 Z" fill="url(#fg)" />
+  <rect x="72" y="104" width="56" height="12" rx="3" fill="url(#fg)" />
+  <rect x="90" y="38" width="20" height="10" rx="2" fill="url(#fg)" />
+  <rect x="44" y="148" width="40" height="12" rx="3" fill="url(#fg)" />
+  <rect x="116" y="148" width="40" height="12" rx="3" fill="url(#fg)" />
+  <rect x="40" y="168" width="120" height="4" rx="2" fill="#ffffff" opacity="0.12" />
+</svg>
