@@ -26,7 +26,7 @@ interface AdminBankAccount {
       <main class="main-content">
         <div class="page-header">
           <h1>Comptes bancaires</h1>
-          <p style="color:#737373; font-size:0.9rem;">Activer ou desactiver les comptes bancaires des clients. Un compte desactive ne peut plus effectuer de virements.</p>
+          <p style="color:#737373; font-size:0.9rem;">Activer ou désactiver les comptes bancaires des clients. Un compte désactivé ne peut plus effectuer de virements.</p>
         </div>
 
         @if (msg()) {
@@ -37,19 +37,19 @@ interface AdminBankAccount {
         <div class="card mb-3" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
           <button class="btn btn-sm" [class.btn-primary]="filter()===''" (click)="filter.set('')">Tous ({{ accounts().length }})</button>
           <button class="btn btn-sm" [class.btn-primary]="filter()==='ACTIVE'" (click)="filter.set('ACTIVE')">Actifs ({{ countByStatus('ACTIVE') }})</button>
-          <button class="btn btn-sm" [class.btn-primary]="filter()==='DISABLED'" (click)="filter.set('DISABLED')">Desactives ({{ countByStatus('DISABLED') }})</button>
+          <button class="btn btn-sm" [class.btn-primary]="filter()==='DISABLED'" (click)="filter.set('DISABLED')">Désactivés ({{ countByStatus('DISABLED') }})</button>
         </div>
 
         <!-- Confirm dialog -->
         @if (confirmAccount()) {
           <div class="overlay" (click)="confirmAccount.set(null)">
             <div class="dialog" (click)="$event.stopPropagation()">
-              <h3>{{ confirmAction() === 'deactivate' ? 'Desactiver le compte' : 'Activer le compte' }}</h3>
+              <h3>{{ confirmAction() === 'deactivate' ? 'Désactiver le compte' : 'Activer le compte' }}</h3>
               <p>Compte : <strong>{{ confirmAccount()!.accountNumber }}</strong></p>
               <p>Client : <strong>{{ confirmAccount()!.clientName }}</strong></p>
               @if (confirmAction() === 'deactivate') {
                 <p style="color: var(--danger, #e74c3c); font-size: 0.88rem; margin-top: 0.75rem;">
-                  Le client ne pourra plus effectuer de virements (simple, groupe, permanent) depuis ce compte tant qu'il reste desactive.
+                  Le client ne pourra plus effectuer de virements (simple, groupé, permanent) depuis ce compte tant qu'il reste désactivé.
                 </p>
               } @else {
                 <p style="color: #2ecc71; font-size: 0.88rem; margin-top: 0.75rem;">
@@ -62,7 +62,7 @@ interface AdminBankAccount {
                         [class.btn-danger]="confirmAction() === 'deactivate'"
                         [class.btn-primary]="confirmAction() === 'activate'"
                         (click)="onConfirm()" [disabled]="processing()">
-                  {{ processing() ? 'Traitement...' : (confirmAction() === 'deactivate' ? 'Desactiver' : 'Activer') }}
+                  {{ processing() ? 'Traitement...' : (confirmAction() === 'deactivate' ? 'Désactiver' : 'Activer') }}
                 </button>
               </div>
             </div>
@@ -79,7 +79,7 @@ interface AdminBankAccount {
                   <th>Client</th>
                   <th>Solde</th>
                   <th>Statut</th>
-                  <th>Cree le</th>
+                  <th>Créé le</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -104,7 +104,7 @@ interface AdminBankAccount {
                     <td>{{ a.createdAt | date:'dd/MM/yyyy' }}</td>
                     <td class="flex gap-1">
                       @if (a.status === 'ACTIVE') {
-                        <button class="btn btn-secondary btn-sm" (click)="openConfirm(a, 'deactivate')">Desactiver</button>
+                        <button class="btn btn-secondary btn-sm" (click)="openConfirm(a, 'deactivate')">Désactiver</button>
                       } @else if (a.status === 'DISABLED') {
                         <button class="btn btn-primary btn-sm" (click)="openConfirm(a, 'activate')">Activer</button>
                       }
@@ -112,7 +112,7 @@ interface AdminBankAccount {
                   </tr>
                 }
                 @if (filtered().length === 0) {
-                  <tr><td colspan="7" style="text-align:center; padding:2rem; color:#888;">Aucun compte trouve</td></tr>
+                  <tr><td colspan="7" style="text-align:center; padding:2rem; color:#888;">Aucun compte trouvé</td></tr>
                 }
               </tbody>
             </table>
@@ -172,8 +172,8 @@ export class AdminBankAccountsComponent implements OnInit {
   statusLabel(s: string): string {
     switch (s) {
       case 'ACTIVE': return 'Actif';
-      case 'DISABLED': return 'Desactive';
-      case 'CLOSED': return 'Ferme';
+      case 'DISABLED': return 'Désactivé';
+      case 'CLOSED': return 'Fermé';
       default: return s;
     }
   }
@@ -198,8 +198,8 @@ export class AdminBankAccountsComponent implements OnInit {
         this.processing.set(false);
         this.confirmAccount.set(null);
         this.showMsg(action === 'deactivate'
-          ? `Compte ${account.accountNumber} desactive`
-          : `Compte ${account.accountNumber} active`);
+          ? `Compte ${account.accountNumber} désactivé`
+          : `Compte ${account.accountNumber} activé`);
         this.load();
       },
       error: (e) => {

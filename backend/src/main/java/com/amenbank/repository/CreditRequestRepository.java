@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public interface CreditRequestRepository extends JpaRepository<CreditRequest, Long> {
     Page<CreditRequest> findByClientId(Long clientId, Pageable pageable);
     Page<CreditRequest> findByStatus(CreditRequest.CreditStatus status, Pageable pageable);
+    long countByStatus(CreditRequest.CreditStatus status);
     Page<CreditRequest> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("SELECT c FROM CreditRequest c WHERE c.createdAt BETWEEN :from AND :to ORDER BY c.createdAt ASC")

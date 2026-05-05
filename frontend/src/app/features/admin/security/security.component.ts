@@ -5,6 +5,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 import { ADMIN_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/models/api.models';
+import { securityActionFr, statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-admin-security',
@@ -14,8 +15,8 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
       <app-sidebar [items]="navItems" />
       <main class="main-content">
         <div class="page-header">
-          <h1>Securite — acces non autorises</h1>
-          <p class="subtitle">Detectez les tentatives d'acces suspectes et bloquez les comptes concernes.</p>
+          <h1>Sécurité — accès non autorisés</h1>
+          <p class="subtitle">Détectez les tentatives d'accès suspectes et bloquez les comptes concernés.</p>
         </div>
 
         @if (success()) { <div class="alert alert-success">{{ success() }}</div> }
@@ -24,7 +25,7 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
         <!-- KPIs -->
         <div class="kpi-grid">
           <div class="kpi kpi-total"><span class="kpi-label">Incidents (24h)</span><span class="kpi-value">{{ incidents().length }}</span></div>
-          <div class="kpi kpi-failed"><span class="kpi-label">Login rejetes</span><span class="kpi-value">{{ failedCount() }}</span></div>
+          <div class="kpi kpi-failed"><span class="kpi-label">Connexions rejetées</span><span class="kpi-value">{{ failedCount() }}</span></div>
           <div class="kpi kpi-unauth"><span class="kpi-label">Tokens invalides</span><span class="kpi-value">{{ unauthorizedCount() }}</span></div>
           <div class="kpi kpi-suspects"><span class="kpi-label">Comptes suspects</span><span class="kpi-value">{{ suspects().length }}</span></div>
           <div class="kpi kpi-blocked"><span class="kpi-label">IP bloquees</span><span class="kpi-value">{{ blockedIps().length }}</span></div>
@@ -35,10 +36,10 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
           <div class="card-head">
             <div>
               <h3 style="margin:0;">Comptes suspects</h3>
-              <p class="muted">Utilisateurs ayant franchi le seuil d'incidents sur la fenetre selectionnee.</p>
+              <p class="muted">Utilisateurs ayant franchi le seuil d'incidents sur la fenêtre sélectionnée.</p>
             </div>
             <div class="filters">
-              <label>Fenetre (h)
+              <label>Fenêtre (h)
                 <input type="number" [(ngModel)]="hours" min="1" max="168" (ngModelChange)="load()">
               </label>
               <label>Seuil
@@ -53,11 +54,11 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
               <thead>
                 <tr>
                   <th>Utilisateur</th>
-                  <th>Email</th>
+                  <th>Adresse e-mail</th>
                   <th>Statut</th>
-                  <th class="text-right">Login rejetes</th>
-                  <th class="text-right">Acces non autorises</th>
-                  <th>Derniere tentative</th>
+                  <th class="text-right">Connexions rejetées</th>
+                  <th class="text-right">Accès non autorisés</th>
+                  <th>Dernière tentative</th>
                   <th>IP</th>
                   <th>Action</th>
                 </tr>
@@ -72,7 +73,7 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
                         [class.badge-success]="s.status==='ACTIVE'"
                         [class.badge-warning]="s.status==='LOCKED'"
                         [class.badge-danger]="s.status==='DISABLED'"
-                        [class.badge-info]="s.status==='ANONYMOUS'">{{ s.status }}</span>
+                        [class.badge-info]="s.status==='ANONYMOUS'">{{ statusFr(s.status) }}</span>
                     </td>
                     <td class="text-right">{{ s.failedLoginCount }}</td>
                     <td class="text-right danger">{{ s.unauthorizedCount }}</td>
@@ -84,14 +85,14 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
                           {{ blocking() === s.userId ? 'Blocage...' : '🛑 Bloquer' }}
                         </button>
                       } @else if (s.status === 'DISABLED') {
-                        <span class="muted">Deja bloque</span>
+                        <span class="muted">Déjà bloqué</span>
                       } @else if (s.status === 'ANONYMOUS') {
                         @if (s.lastIp && !isIpBlocked(s.lastIp)) {
                           <button class="btn btn-danger btn-sm" (click)="blockIpFromSuspect(s)" [disabled]="blockingIp() === s.lastIp">
                             {{ blockingIp() === s.lastIp ? 'Blocage...' : '🛑 Bloquer IP' }}
                           </button>
                         } @else if (s.lastIp && isIpBlocked(s.lastIp)) {
-                          <span class="muted">IP deja bloquee</span>
+                          <span class="muted">IP déjà bloquée</span>
                         } @else {
                           <span class="muted">IP inconnue</span>
                         }
@@ -101,7 +102,7 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="8" class="text-center" style="padding:1.5rem;color:#9ca3af;">Aucun compte suspect sur la fenetre selectionnee.</td></tr>
+                  <tr><td colspan="8" class="text-center" style="padding:1.5rem;color:#9ca3af;">Aucun compte suspect sur la fenêtre sélectionnée.</td></tr>
                 }
               </tbody>
             </table>
@@ -112,8 +113,8 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
         <div class="card" style="margin-top:1.25rem;">
           <div class="card-head">
             <div>
-              <h3 style="margin:0;">Adresses IP bloquees</h3>
-              <p class="muted">Les requetes provenant de ces IP sont rejetees avant authentification.</p>
+              <h3 style="margin:0;">Adresses IP bloquées</h3>
+              <p class="muted">Les requêtes provenant de ces IP sont rejetées avant authentification.</p>
             </div>
             <form class="ip-form" (submit)="submitManualBlock($event)">
               <input type="text" [(ngModel)]="newIp" name="newIp" placeholder="IP (ex: 192.168.1.10)" required>
@@ -130,7 +131,7 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
                 <tr>
                   <th>IP</th>
                   <th>Motif</th>
-                  <th>Bloquee par</th>
+                  <th>Bloquée par</th>
                   <th>Le</th>
                   <th>Action</th>
                 </tr>
@@ -144,12 +145,12 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
                     <td>{{ b.blockedAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                     <td>
                       <button class="btn btn-secondary btn-sm" (click)="unblockIp(b)" [disabled]="unblocking() === b.id">
-                        {{ unblocking() === b.id ? 'Debloquage...' : 'Debloquer' }}
+                        {{ unblocking() === b.id ? 'Déblocage...' : 'Débloquer' }}
                       </button>
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="text-center" style="padding:1.5rem;color:#9ca3af;">Aucune IP bloquee.</td></tr>
+                  <tr><td colspan="5" class="text-center" style="padding:1.5rem;color:#9ca3af;">Aucune IP bloquée.</td></tr>
                 }
               </tbody>
             </table>
@@ -160,7 +161,7 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
         <div class="card" style="margin-top:1.25rem;">
           <div class="card-head">
             <h3 style="margin:0;">Journal des incidents</h3>
-            <p class="muted">Evenements de securite recents triees du plus recent au plus ancien.</p>
+            <p class="muted">Événements de sécurité récents triés du plus récent au plus ancien.</p>
           </div>
           <div class="table-container">
             <table>
@@ -170,14 +171,14 @@ import { SecurityIncident, SuspiciousUser, BlockedIp } from '../../../core/model
                   <th>Action</th>
                   <th>Utilisateur</th>
                   <th>IP</th>
-                  <th>Details</th>
+                  <th>Détails</th>
                 </tr>
               </thead>
               <tbody>
                 @for (i of incidents(); track i.id) {
                   <tr>
                     <td>{{ i.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</td>
-                    <td><span class="action-chip" [class]="'chip-' + i.action">{{ i.action }}</span></td>
+                    <td><span class="action-chip" [class]="'chip-' + i.action">{{ securityActionFr(i.action) }}</span></td>
                     <td>{{ i.userEmail || '(anonyme)' }}</td>
                     <td><code>{{ i.ipAddress || '—' }}</code></td>
                     <td class="details-cell" [title]="i.details">{{ i.details }}</td>
@@ -257,6 +258,8 @@ export class AdminSecurityComponent implements OnInit {
   success = signal('');
   error = signal('');
   navItems = ADMIN_NAV;
+  statusFr = statusFr;
+  securityActionFr = securityActionFr;
 
   failedCount = computed(() =>
     this.incidents().filter(i => i.action === 'LOGIN_FAILED').length);
@@ -298,13 +301,13 @@ export class AdminSecurityComponent implements OnInit {
 
   block(s: SuspiciousUser) {
     if (!s.userId) return;
-    const reason = prompt(`Bloquer ${s.email} ?\nMotif (optionnel) :`, 'Tentatives d\'acces non autorisees');
+    const reason = prompt(`Bloquer ${s.email} ?\nMotif (optionnel) :`, 'Tentatives d\'accès non autorisées');
     if (reason === null) return;
     this.blocking.set(s.userId);
     this.api.blockSuspiciousUser(s.userId, reason).subscribe({
       next: () => {
         this.blocking.set(null);
-        this.flash(`Compte ${s.email} bloque avec succes.`);
+        this.flash(`Compte ${s.email} bloqué avec succès.`);
         this.load();
       },
       error: e => {
@@ -316,7 +319,7 @@ export class AdminSecurityComponent implements OnInit {
 
   blockIpFromSuspect(s: SuspiciousUser) {
     if (!s.lastIp) return;
-    const reason = prompt(`Bloquer l'adresse IP ${s.lastIp} ?\nMotif :`, 'Tentatives d\'acces anonymes non autorisees');
+    const reason = prompt(`Bloquer l'adresse IP ${s.lastIp} ?\nMotif :`, 'Tentatives d\'accès anonymes non autorisées');
     if (reason === null) return;
     this.doBlockIp(s.lastIp, reason);
   }
@@ -335,7 +338,7 @@ export class AdminSecurityComponent implements OnInit {
         this.blockingIp.set(null);
         this.newIp = '';
         this.newIpReason = '';
-        this.flash(`IP ${ip} bloquee avec succes.`);
+        this.flash(`IP ${ip} bloquée avec succès.`);
         this.load();
       },
       error: e => {
@@ -346,17 +349,17 @@ export class AdminSecurityComponent implements OnInit {
   }
 
   unblockIp(b: BlockedIp) {
-    if (!confirm(`Debloquer l'IP ${b.ipAddress} ?`)) return;
+    if (!confirm(`Débloquer l'IP ${b.ipAddress} ?`)) return;
     this.unblocking.set(b.id);
     this.api.unblockIp(b.id).subscribe({
       next: () => {
         this.unblocking.set(null);
-        this.flash(`IP ${b.ipAddress} debloquee.`);
+        this.flash(`IP ${b.ipAddress} débloquée.`);
         this.load();
       },
       error: e => {
         this.unblocking.set(null);
-        this.flash('', e?.error?.message || 'Impossible de debloquer cette IP.');
+        this.flash('', e?.error?.message || 'Impossible de débloquer cette IP.');
       }
     });
   }

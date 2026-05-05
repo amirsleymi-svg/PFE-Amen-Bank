@@ -16,7 +16,7 @@ import { DatePipe } from '@angular/common';
         <!-- Header -->
         <div class="chat-header glass-style">
           <div class="flex align-center gap-1">
-            <div class="bot-avatar-large outfit">AI</div>
+            <div class="bot-avatar-large outfit">IA</div>
             <div>
               <h1 class="outfit">Assistant Amen Bank</h1>
               <div class="chat-status" [class.online]="!error()">
@@ -119,7 +119,7 @@ import { DatePipe } from '@angular/common';
     .chat-main-layout { display: flex; flex: 1; overflow: hidden; }
     .conv-sidebar { width: 300px; background: var(--gray-50); border-right: 1px solid var(--gray-100); padding: 1.5rem; display: flex; flex-direction: column; }
     .conv-list-premium { flex: 1; overflow-y: auto; }
-    .conv-entry { padding: 1rem; border-radius: 12px; cursor: pointer; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; border: 1px solid transparent; }
+    .conv-entry { padding: 1rem; border-radius: 12px; cursor: pointer; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; transition: all 0.05s; border: 1px solid transparent; }
     .conv-entry:hover { background: white; border-color: var(--gray-200); }
     .conv-entry.active { background: white; border-color: var(--accent); box-shadow: var(--shadow-sm); }
     .conv-name { font-size: 0.85rem; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
@@ -135,7 +135,7 @@ import { DatePipe } from '@angular/common';
     .welcome-view { text-align: center; padding: 3rem 0; max-width: 800px; margin: 0 auto; }
     .welcome-logo { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.5; }
     .suggestions-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; }
-    .suggestion-tile { display: flex; gap: 1rem; padding: 1.25rem; border: 1px solid var(--gray-100); border-radius: 16px; background: white; cursor: pointer; transition: all 0.2s; text-align: left; }
+    .suggestion-tile { display: flex; gap: 1rem; padding: 1.25rem; border: 1px solid var(--gray-100); border-radius: 16px; background: white; cursor: pointer; transition: all 0.05s; text-align: left; }
     .suggestion-tile:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow); }
     .tile-icon { font-size: 1.5rem; }
     .tile-label { display: block; font-weight: 800; font-size: 0.8rem; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -159,7 +159,7 @@ import { DatePipe } from '@angular/common';
     .chat-input-container { padding: 1.5rem 4rem; border-top: 1px solid var(--gray-100); }
     .premium-chat-form { display: flex; gap: 1rem; align-items: center; background: var(--gray-50); padding: 0.6rem 0.6rem 0.6rem 1.5rem; border-radius: 100px; border: 1px solid var(--gray-100); }
     .premium-chat-form input { flex: 1; border: none; background: none; outline: none; font-size: 0.95rem; color: var(--primary); }
-    .btn-send-bot { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--primary); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .btn-send-bot { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--primary); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.05s; }
     .btn-send-bot:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     .btn-send-bot:disabled { opacity: 0.3; cursor: not-allowed; }
   `]
@@ -178,17 +178,17 @@ export class ChatbotComponent implements OnInit, AfterViewChecked {
 
   suggestions = [
     { icon: '💰', label: 'Mon solde', text: 'Quel est le solde de mon compte et ma carte ?' },
-    { icon: '💸', label: 'Virement simple', text: 'Comment faire un virement simple etape par etape ?' },
-    { icon: '👥', label: 'Virement groupe', text: 'Comment envoyer de l\'argent a plusieurs personnes ?' },
-    { icon: '🔄', label: 'Virement permanent', text: 'Comment configurer un virement automatique recurrent ?' },
-    { icon: '📊', label: 'Credit', text: 'Je veux simuler un credit, quels sont les taux et conditions ?' },
+    { icon: '💸', label: 'Virement simple', text: 'Comment faire un virement simple étape par étape ?' },
+    { icon: '👥', label: 'Virement groupé', text: 'Comment envoyer de l\'argent à plusieurs personnes ?' },
+    { icon: '🔄', label: 'Virement permanent', text: 'Comment configurer un virement automatique récurrent ?' },
+    { icon: '📊', label: 'Crédit', text: 'Je veux simuler un crédit, quels sont les taux et conditions ?' },
     { icon: '💳', label: 'Ma carte', text: 'Comment fonctionne ma carte et les virements carte/compte ?' },
-    { icon: '📋', label: 'Mes operations', text: 'Resume mes dernieres transactions et virements en attente' },
+    { icon: '📋', label: 'Mes opérations', text: 'Résume mes dernières transactions et virements en attente' },
     { icon: '🔔', label: 'Notifications', text: 'Est-ce que j\'ai des notifications non lues ?' },
     { icon: '🏦', label: 'Agences', text: 'Quels sont les horaires et le contact du service client ?' },
-    { icon: '🔒', label: 'Securite', text: 'Comment est protege mon compte contre la fraude ?' },
+    { icon: '🔒', label: 'Sécurité', text: 'Comment mon compte est-il protégé contre la fraude ?' },
     { icon: '📱', label: 'Services', text: 'Quels sont tous les services disponibles dans l\'application ?' },
-    { icon: '❓', label: 'Aide', text: 'Mon compte ou ma carte est desactive, que faire ?' },
+    { icon: '❓', label: 'Aide', text: 'Mon compte ou ma carte est désactivé, que faire ?' },
   ];
 
   constructor(private api: ApiService) {}
@@ -257,9 +257,9 @@ export class ChatbotComponent implements OnInit, AfterViewChecked {
       error: (e) => {
         this.loading.set(false);
         if (e.status === 0) {
-          this.error.set('Le service chatbot n\'est pas demarre.');
+          this.error.set('Le service chatbot n\'est pas démarré.');
         } else if (e.status === 401) {
-          this.error.set('Session expiree. Veuillez vous reconnecter.');
+          this.error.set('Session expirée. Veuillez vous reconnecter.');
         } else {
           this.error.set(e.error?.detail || 'Erreur de communication avec l\'assistant.');
         }

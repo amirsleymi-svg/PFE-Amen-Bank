@@ -4,6 +4,7 @@ import { CLIENT_NAV } from '../../../../shared/nav-items';
 import { ApiService } from '../../../../core/services/api.service';
 import { CreditRequest } from '../../../../core/models/api.models';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { statusFr } from '../../../../shared/display-labels';
 
 @Component({
   selector: 'app-credit-list',
@@ -23,7 +24,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
                     <td class="amount">{{ c.amount | number:'1.3-3' }} TND</td>
                     <td>{{ c.durationMonths }} mois</td>
                     <td>{{ c.monthlyPayment | number:'1.3-3' }} TND</td>
-                    <td><span class="badge" [class.badge-success]="c.status==='APPROVED'" [class.badge-warning]="c.status==='PENDING'" [class.badge-danger]="c.status==='REJECTED'">{{ c.status }}</span></td>
+                    <td><span class="badge" [class.badge-success]="c.status==='APPROVED'" [class.badge-warning]="c.status==='PENDING'" [class.badge-danger]="c.status==='REJECTED'">{{ statusFr(c.status) }}</span></td>
                     <td>{{ c.createdAt | date:'dd/MM/yyyy' }}</td>
                   </tr>
                 } @empty { <tr><td colspan="5" class="text-center" style="padding:2rem;">Aucune demande</td></tr> }
@@ -38,6 +39,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 export class CreditListComponent implements OnInit {
   credits = signal<CreditRequest[]>([]);
   navItems = CLIENT_NAV;
+  statusFr = statusFr;
   constructor(private api: ApiService) {}
   ngOnInit() { this.api.getClientCredits().subscribe({ next: r => { if (r.data?.content) this.credits.set(r.data.content); }, error: () => {} }); }
 }

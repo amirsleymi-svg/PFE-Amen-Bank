@@ -25,7 +25,7 @@ import { LogoComponent } from '../../../shared/components/logo/logo.component';
             </div>
             <div class="card glass-card mockup-2">
               <div class="mock-icon">💳</div>
-              <div class="mock-title outfit">Premium Visa</div>
+              <div class="mock-title outfit">Visa Premium</div>
             </div>
           </div>
           <div class="visual-text animate-in" style="animation-delay: 0.2s">
@@ -52,7 +52,7 @@ import { LogoComponent } from '../../../shared/components/logo/logo.component';
 
           <form class="auth-form" (ngSubmit)="onSubmit()">
             <div class="form-group">
-              <label class="outfit">Identifiant ou Email</label>
+              <label class="outfit">Identifiant ou e-mail</label>
               <div class="input-wrapper">
                 <span class="input-icon">👤</span>
                 <input type="text" [(ngModel)]="login" name="login" placeholder="votre@email.com" required class="outfit">
@@ -83,8 +83,8 @@ import { LogoComponent } from '../../../shared/components/logo/logo.component';
           </div>
           
           <div class="security-trust">
-            <span class="trust-item outfit">🔐 Chiffrement AES-256</span>
-            <span class="trust-item outfit">🛡️ Protection 2FA Active</span>
+            <span class="trust-item outfit">🔐 Connexion sécurisée</span>
+            <span class="trust-item outfit">🛡️ Protection renforcée</span>
           </div>
         </div>
       </div>
@@ -165,7 +165,7 @@ export class LoginComponent {
   loading = signal(false);
   error = signal('');
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router) { }
 
   onSubmit() {
     this.loading.set(true);
@@ -182,7 +182,7 @@ export class LoginComponent {
           this.redirectByRole(res.data.user.role);
           return;
         }
-        this.error.set('Reponse de connexion invalide. Reessayez.');
+        this.error.set('Réponse de connexion invalide. Réessayez.');
       },
       error: (err) => {
         this.loading.set(false);
@@ -196,7 +196,7 @@ export class LoginComponent {
       case 'CLIENT': this.router.navigate(['/client/dashboard']); break;
       case 'EMPLOYEE': this.router.navigate(['/employee/dashboard']); break;
       case 'ADMIN': this.router.navigate(['/admin/dashboard']); break;
-      default: this.error.set('Role utilisateur inconnu. Contactez le support.');
+      default: this.error.set('Rôle utilisateur inconnu. Contactez le support.');
     }
   }
 }

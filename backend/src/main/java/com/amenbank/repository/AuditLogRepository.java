@@ -35,4 +35,14 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     long countByUserIdAndActionSince(@Param("userId") Long userId,
                                      @Param("action") String action,
                                      @Param("since") LocalDateTime since);
+
+    long countByIsReadFalse();
+
+    @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.action IN :actions AND a.isRead = false")
+    long countByActionInAndIsReadFalse(@Param("actions") Collection<String> actions);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query("UPDATE AuditLog a SET a.isRead = true WHERE a.isRead = false")
+    void markAllAsRead();
 }

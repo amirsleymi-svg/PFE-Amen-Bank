@@ -103,7 +103,7 @@ import { AccountCard, BankAccount, CardTransferDirection } from '../../../core/m
                 <div class="card-number-v outfit">{{ c.cardNumberMasked }}</div>
                 <div class="flex-between align-end">
                   <div class="card-holder-v">
-                    <div class="label outfit">Valid Thru</div>
+                    <div class="label outfit">Valide jusqu'à</div>
                     <div class="value outfit">{{ c.expiryDate | date:'MM/yy' }}</div>
                   </div>
                   <div class="card-type-v outfit">PREMIUM</div>
@@ -218,7 +218,7 @@ export class CardsComponent implements OnInit {
   }
 
   statusLabel(s: string): string {
-    switch (s) { case 'ACTIVE': return 'Active'; case 'DISABLED': return 'Desactivee'; case 'EXPIRED': return 'Expiree'; default: return s; }
+    switch (s) { case 'ACTIVE': return 'Active'; case 'DISABLED': return 'Désactivée'; case 'EXPIRED': return 'Expirée'; default: return s; }
   }
 
   showMsg(text: string, error = false) {
@@ -234,8 +234,8 @@ export class CardsComponent implements OnInit {
         this.loading.set(false);
         const c = r.data;
         this.showMsg(c
-          ? `Votre carte bancaire est creee avec succes : ${c.cardNumberMasked} (expire ${c.expiryDate})`
-          : 'Carte creee');
+          ? `Votre carte bancaire est créée avec succès : ${c.cardNumberMasked} (expire ${c.expiryDate})`
+          : 'Carte créée');
         this.requestAccountId = null;
         this.load();
       },
@@ -258,21 +258,21 @@ export class CardsComponent implements OnInit {
     const card = this.transferCard();
     if (!card || !this.transferAmount || this.transferAmount <= 0) return;
     this.api.cardTransfer(card.id, this.transferDirection, this.transferAmount).subscribe({
-      next: () => { this.closeTransfer(); this.showMsg('Carte rechargee avec succes'); this.load(); },
+      next: () => { this.closeTransfer(); this.showMsg('Carte rechargée avec succès'); this.load(); },
       error: (e) => this.showMsg(e.error?.message || 'Erreur', true)
     });
   }
 
   activate(id: number) {
     this.api.activateCard(id).subscribe({
-      next: () => { this.showMsg('Carte activee'); this.load(); },
+      next: () => { this.showMsg('Carte activée'); this.load(); },
       error: (e) => this.showMsg(e.error?.message || 'Erreur', true)
     });
   }
 
   deactivate(id: number) {
     this.api.deactivateCard(id).subscribe({
-      next: () => { this.showMsg('Carte desactivee'); this.load(); },
+      next: () => { this.showMsg('Carte désactivée'); this.load(); },
       error: (e) => this.showMsg(e.error?.message || 'Erreur', true)
     });
   }
@@ -281,7 +281,7 @@ export class CardsComponent implements OnInit {
     const card = this.confirmDelete();
     if (!card) return;
     this.api.deleteCard(card.id).subscribe({
-      next: () => { this.confirmDelete.set(null); this.showMsg('Carte supprimee'); this.load(); },
+      next: () => { this.confirmDelete.set(null); this.showMsg('Carte supprimée'); this.load(); },
       error: (e) => { this.confirmDelete.set(null); this.showMsg(e.error?.message || 'Erreur', true); }
     });
   }

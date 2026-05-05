@@ -181,6 +181,16 @@ public class EmailService {
             "Compte cree. Identifiant : " + username + " / Mot de passe temporaire : " + tempPassword);
     }
 
+    @Async
+    public void sendRejectionEmail(String to) {
+        String subject = "Amen Bank - Inscription rejetée";
+        String body = "Bonjour,\n\n" +
+                "Votre demande de création de compte a été rejetée.\n\n" +
+                "Cordialement,\nAmen Bank";
+        sendEmail(to, subject, body);
+        pushInAppNotification(to, subject, "votre création de compte est rejeté");
+    }
+
     private void sendEmail(String to, String subject, String body) {
         log.info("\n====== EMAIL ======\nTo: {}\nSubject: {}\nBody:\n{}\n===================", to, subject, body);
 

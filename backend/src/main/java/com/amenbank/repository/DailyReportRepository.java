@@ -9,6 +9,8 @@ import java.time.LocalDate;
 public interface DailyReportRepository extends JpaRepository<DailyReport, Long> {
     Page<DailyReport> findByEmployeeIdOrderByReportDateDesc(Long employeeId, Pageable pageable);
     Page<DailyReport> findByStatusOrderByReportDateDesc(DailyReport.ReportStatus status, Pageable pageable);
+    long countByStatus(DailyReport.ReportStatus status);
+    long countByEmployeeIdAndStatus(Long employeeId, DailyReport.ReportStatus status);
     Page<DailyReport> findByReportDateBetweenOrderByReportDateDesc(LocalDate from, LocalDate to, Pageable pageable);
     Page<DailyReport> findAllByOrderByReportDateDesc(Pageable pageable);
 }

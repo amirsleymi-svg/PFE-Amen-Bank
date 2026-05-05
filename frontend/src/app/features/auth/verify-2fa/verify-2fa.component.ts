@@ -11,20 +11,20 @@ import { AuthService } from '../../../core/services/auth.service';
       <div class="auth-card">
         <div class="auth-header">
           <div class="logo">Amen Bank</div>
-          <h1>Verification 2FA</h1>
-          <p>Un code a 6 chiffres a ete envoye a votre email</p>
+          <h1>Vérification en deux étapes</h1>
+          <p>Un code à 6 chiffres a été envoyé à votre adresse e-mail</p>
         </div>
 
         @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
 
         <form (ngSubmit)="onSubmit()">
           <div class="form-group">
-            <label>Code OTP</label>
+            <label>Code de sécurité</label>
             <input type="text" [(ngModel)]="code" name="code" placeholder="000000" maxlength="6"
                    style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;" required>
           </div>
           <button type="submit" class="btn btn-primary btn-block" [disabled]="loading()">
-            {{ loading() ? 'Verification...' : 'Verifier' }}
+            {{ loading() ? 'Vérification...' : 'Vérifier' }}
           </button>
         </form>
       </div>
@@ -57,7 +57,7 @@ export class Verify2faComponent implements OnInit {
           this.redirectByRole(res.data.user.role);
           return;
         }
-        this.error.set('Reponse invalide. Reessayez.');
+        this.error.set('Réponse invalide. Réessayez.');
       },
       error: (err) => {
         this.loading.set(false);
@@ -71,7 +71,7 @@ export class Verify2faComponent implements OnInit {
       case 'CLIENT': this.router.navigate(['/client/dashboard']); break;
       case 'EMPLOYEE': this.router.navigate(['/employee/dashboard']); break;
       case 'ADMIN': this.router.navigate(['/admin/dashboard']); break;
-      default: this.error.set('Role utilisateur inconnu. Contactez le support.');
+      default: this.error.set('Rôle utilisateur inconnu. Contactez le support.');
     }
   }
 }

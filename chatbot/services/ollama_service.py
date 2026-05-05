@@ -17,43 +17,48 @@ async def generate(messages: list[dict[str, str]]) -> str:
     Send messages to Ollama /api/chat and return the assistant response.
     messages format: [{"role": "system"|"user"|"assistant", "content": "..."}]
     """
-    payload = {
-        "model": settings.OLLAMA_MODEL,
-        "messages": messages,
-        "stream": False,
-        "options": {
-            "temperature": 0.1,
-            "top_p": 0.9,
-            "repeat_penalty": 1.25,
-            "num_predict": 400,
-            "num_ctx": 8192,
-            "stop": ["\nQ:", "\nUser:", "INTERDIT"],
-        },
-    }
+    # FIX 2: Model selection with fallback
+    PRIMARY_MODEL = "mistral"
+    FALLBACK_MODEL = settings.OLLAMA_MODEL # existing llama3.2:1b
+    
+    async def _try_generate(model_name: str) -> str | None:
+        payload = {
+            "model": model_name,
+            "messages": messages,
+            "stream": False,
+            "options": {
+                "temperature": 0.1,
+                "top_p": 0.9,
+                "repeat_penalty": 1.25,
+                "num_predict": 400,
+                "num_ctx": 8192,
+                "stop": ["\nQ:", "\nUser:", "INTERDIT"],
+            },
+        }
+        try:
+            async with httpx.AsyncClient(timeout=settings.OLLAMA_TIMEOUT) as client:
+                response = await client.post(
+                    f"{settings.OLLAMA_BASE_URL}/api/chat",
+                    json=payload,
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data.get("message", {}).get("content", "")
+        except httpx.TimeoutException:
+            logger.error("Ollama request timed out for model %s", model_name)
+            return None
+        except Exception as e:
+            logger.warning("Ollama generation with model %s failed: %s", model_name, e)
+            return None
 
-    try:
-        async with httpx.AsyncClient(timeout=settings.OLLAMA_TIMEOUT) as client:
-            response = await client.post(
-                f"{settings.OLLAMA_BASE_URL}/api/chat",
-                json=payload,
-            )
-            response.raise_for_status()
-            data = response.json()
-            content = data.get("message", {}).get("content", "")
-            if not content:
-                logger.warning("Ollama returned empty content: %s", data)
-                return _FALLBACK_RESPONSE
-            return content
+    # Try Primary
+    content = await _try_generate(PRIMARY_MODEL)
+    if not content:
+        # Fallback to existing
+        content = await _try_generate(FALLBACK_MODEL)
 
-    except httpx.ConnectError:
-        logger.error("Cannot connect to Ollama at %s", settings.OLLAMA_BASE_URL)
+    if not content:
+        logger.error("All Ollama models failed.")
         return _FALLBACK_RESPONSE
-    except httpx.TimeoutException:
-        logger.error("Ollama request timed out after %ds", settings.OLLAMA_TIMEOUT)
-        return "Ma reponse prend trop de temps. Veuillez reformuler votre question plus simplement."
-    except httpx.HTTPStatusError as e:
-        logger.error("Ollama HTTP error %d: %s", e.response.status_code, e.response.text)
-        return _FALLBACK_RESPONSE
-    except Exception as e:
-        logger.error("Unexpected Ollama error: %s", e)
-        return _FALLBACK_RESPONSE
+        
+    return content

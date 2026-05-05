@@ -65,7 +65,7 @@ import { LogoComponent } from '../../../shared/components/logo/logo.component';
               </div>
 
               <div class="form-group">
-                <label class="outfit">Adresse Email</label>
+                <label class="outfit">Adresse e-mail</label>
                 <div class="input-wrapper">
                   <span class="input-icon">✉️</span>
                   <input type="email" [(ngModel)]="form.email" name="email" placeholder="votre@email.com" required class="outfit">
@@ -158,7 +158,7 @@ export class RegisterComponent {
   error = signal('');
   success = signal('');
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   onSubmit() {
     this.loading.set(true);

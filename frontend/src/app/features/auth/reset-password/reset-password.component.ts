@@ -26,11 +26,11 @@ import { AuthService } from '../../../core/services/auth.service';
               <input type="password" [(ngModel)]="confirm" name="confirm" required>
             </div>
             <button type="submit" class="btn btn-primary btn-block" [disabled]="loading()">
-              {{ loading() ? 'Envoi...' : 'Reinitialiser' }}
+              {{ loading() ? 'Envoi...' : 'Réinitialiser' }}
             </button>
           </form>
         }
-        <div class="auth-footer"><a routerLink="/login">Retour a la connexion</a></div>
+        <div class="auth-footer"><a routerLink="/login">Retour à la connexion</a></div>
       </div>
     </div>
   `
@@ -55,7 +55,7 @@ export class ResetPasswordComponent implements OnInit {
     this.loading.set(true);
     const token = this.route.snapshot.queryParamMap.get('token') || '';
     this.auth.resetPassword(token, this.password).subscribe({
-      next: () => { this.loading.set(false); this.success.set('Mot de passe reinitialise avec succes !'); },
+      next: () => { this.loading.set(false); this.success.set('Mot de passe réinitialisé avec succès !'); },
       error: (err) => { this.loading.set(false); this.error.set(err.error?.message || 'Erreur'); }
     });
   }

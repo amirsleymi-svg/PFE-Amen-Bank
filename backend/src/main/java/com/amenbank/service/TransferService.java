@@ -8,6 +8,7 @@ import com.amenbank.dto.response.TransactionResponse;
 import com.amenbank.entity.*;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.NotificationService;
+import com.amenbank.notification.NotificationWebSocketHandler;
 import com.amenbank.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,8 +36,10 @@ public class TransferService {
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final FraudDetectionService fraudDetectionService;
     private final OtpService otpService;
+    private final UserRepository userRepository; // ADDED
 
     @Value("${app.transfer.auto-approve-threshold:1000}")
     private BigDecimal autoApproveThreshold;
@@ -140,6 +143,12 @@ public class TransferService {
                     "Votre virement de " + request.getAmount() + " TND vers " + request.getDestinationIban() +
                             " (ref: " + transaction.getReference()
                             + ") depasse le seuil d'auto-approbation et attend la validation d'un employe.");
+            
+            // Notify Employees to validate - ADDED
+            userRepository.findAllByRoleName("EMPLOYEE").forEach(emp -> 
+                notificationService.sendInfo(emp, "Nouveau virement a valider", 
+                    "Un virement de " + request.getAmount() + " TND par " + user.getFirstName() + " attend votre validation.")
+            );
         }
         return mapToResponse(transaction);
     }
@@ -221,6 +230,12 @@ public class TransferService {
                     "Votre virement groupe de " + totalAmount + " TND vers " + request.getBeneficiaries().size() +
                             " beneficiaire(s) (ref: " + transaction.getReference()
                             + ") depasse le seuil d'auto-approbation et attend la validation d'un employe.");
+            
+            // Notify Employees to validate - ADDED
+            userRepository.findAllByRoleName("EMPLOYEE").forEach(emp -> 
+                notificationService.sendInfo(emp, "Nouveau virement groupe a valider", 
+                    "Un virement groupe de " + totalAmount + " TND par " + user.getFirstName() + " attend votre validation.")
+            );
         }
         return mapToResponse(transaction);
     }
@@ -296,6 +311,12 @@ public class TransferService {
                     "Votre virement permanent de " + request.getAmount() + " TND vers " + request.getDestinationIban() +
                             " (frequence: " + request.getFrequency() + ", debut: " + request.getStartDate() +
                             ") depasse le seuil d'auto-approbation et attend la validation d'un employe.");
+            
+            // Notify Employees to validate - ADDED
+            userRepository.findAllByRoleName("EMPLOYEE").forEach(emp -> 
+                notificationService.sendInfo(emp, "Nouveau virement permanent a valider", 
+                    "Un virement permanent de " + request.getAmount() + " TND par " + user.getFirstName() + " attend votre validation.")
+            );
         }
         return mapToResponse(transaction);
     }
@@ -350,6 +371,23 @@ public class TransferService {
                         + " a ete approuve. Les executions seront automatiques selon la frequence choisie."
                 : "Votre virement " + transaction.getReference() + " a ete approuve et execute.";
         notificationService.sendSuccess(transaction.getInitiatedBy(), "Virement approuve", notifMsg);
+        
+        // Notify Administrator if amount > 1000 - ADDED
+        if (transaction.getAmount().compareTo(new BigDecimal(1000)) > 0) {
+            userRepository.findAllByRoleName("ADMIN").forEach(admin -> 
+                notificationService.sendInfo(admin, "Virement important valide", 
+                    "Un virement de " + transaction.getAmount() + " TND (ref: " + transaction.getReference() + ") a ete valide par " + approver.getFirstName())
+            );
+            
+            // If approver is ADMIN, notify all 3 roles - ADDED
+            if (approver.getRole().getName().equals("ADMIN")) {
+                userRepository.findAllByRoleName("EMPLOYEE").forEach(emp -> 
+                    notificationService.sendInfo(emp, "Virement supervise par Admin", "Le virement " + transaction.getReference() + " a ete finalise par l'administrateur.")
+                );
+            }
+        }
+        
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     @Transactional
@@ -371,6 +409,7 @@ public class TransferService {
                 "Rejected transfer " + transaction.getReference());
         notificationService.sendError(transaction.getInitiatedBy(), "Virement refuse",
                 "Votre virement " + transaction.getReference() + " a ete refuse. Motif: " + comment);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     private void executeTransfer(Transaction transaction) {

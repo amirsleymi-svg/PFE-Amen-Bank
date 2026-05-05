@@ -23,7 +23,7 @@ import { AuthService } from '../../../core/services/auth.service';
         } @else if (tokenError()) {
           <div class="alert alert-error">{{ tokenError() }}</div>
           <div class="auth-footer">
-            <a routerLink="/login">Retour a la connexion</a>
+            <a routerLink="/login">Retour à la connexion</a>
           </div>
         } @else {
           @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
@@ -32,7 +32,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <div class="form-group">
               <label>Nouveau mot de passe</label>
               <input type="password" [(ngModel)]="password" name="password"
-                     placeholder="Minimum 8 caracteres" required minlength="8">
+                     placeholder="Minimum 8 caractères" required minlength="8">
             </div>
             <div class="form-group">
               <label>Confirmer le mot de passe</label>
@@ -45,7 +45,7 @@ import { AuthService } from '../../../core/services/auth.service';
           </form>
 
           <div class="auth-footer">
-            <a routerLink="/login">Retour a la connexion</a>
+            <a routerLink="/login">Retour à la connexion</a>
           </div>
         }
       </div>
@@ -77,7 +77,7 @@ export class ActivateAccountComponent implements OnInit {
     this.error.set('');
 
     if (this.password.length < 8) {
-      this.error.set('Le mot de passe doit contenir au moins 8 caracteres.');
+      this.error.set('Le mot de passe doit contenir au moins 8 caractères.');
       return;
     }
     if (this.password !== this.confirmPassword) {
@@ -89,7 +89,7 @@ export class ActivateAccountComponent implements OnInit {
     this.auth.activateAccount(this.token, this.password).subscribe({
       next: () => {
         this.loading.set(false);
-        this.success.set('Compte active avec succes ! Vous pouvez maintenant vous connecter.');
+        this.success.set('Compte activé avec succès ! Vous pouvez maintenant vous connecter.');
       },
       error: (err) => {
         this.loading.set(false);

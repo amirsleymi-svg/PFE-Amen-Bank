@@ -21,6 +21,7 @@ public class NotificationService {
                 .title(title)
                 .message(message)
                 .type(type)
+                .role(user.getRole().getName()) // ADDED
                 .build();
         Notification saved = notificationRepository.save(notification);
         notificationWebSocketHandler.sendToUser(user.getId(), NotificationRealtimeEvent.builder()
@@ -28,6 +29,7 @@ public class NotificationService {
                 .title(saved.getTitle())
                 .message(saved.getMessage())
                 .type(saved.getType())
+                .role(saved.getRole()) // ADDED
                 .createdAt(saved.getCreatedAt())
                 .build());
         log.info("Nouvelle notification envoyee via WebSocket");

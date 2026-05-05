@@ -8,6 +8,7 @@ import com.amenbank.entity.*;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.EmailService;
 import com.amenbank.notification.NotificationService;
+import com.amenbank.notification.NotificationWebSocketHandler;
 import com.amenbank.repository.*;
 import com.amenbank.security.TokenHasher;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class AdminService {
     private final EmailService emailService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final EntityManager entityManager;
     private final TokenHasher tokenHasher;
 
@@ -1079,6 +1081,7 @@ public class AdminService {
 
         auditService.log(admin, "REVIEW_REPORT", "DailyReport", id,
                 "Report reviewed" + (rating != null ? " with rating " + rating + "/5" : ""));
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     public DashboardStatsResponse getDashboardStats() {

@@ -4,6 +4,7 @@ import { CLIENT_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { BankAccount } from '../../../core/models/api.models';
 import { DecimalPipe } from '@angular/common';
+import { statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-accounts',
@@ -36,7 +37,7 @@ import { DecimalPipe } from '@angular/common';
                 </div>
                 <div class="status-box mt-1">
                   <span class="badge" [class.badge-success]="a.status==='ACTIVE'" [class.badge-danger]="a.status!=='ACTIVE'">
-                    {{ a.status }}
+                    {{ statusFr(a.status) }}
                   </span>
                 </div>
               </div>
@@ -53,7 +54,7 @@ import { DecimalPipe } from '@angular/common';
       background: var(--primary); color: white; border: none; padding: 2rem;
       border-radius: var(--radius-lg); position: relative; overflow: hidden;
       min-height: 240px; display: flex; flex-direction: column; justify-content: space-between;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transition: transform 0.05s ease, box-shadow 0.3s ease;
     }
     .premium-account-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
     .card-glow { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(197,165,114,0.15) 0%, transparent 70%); pointer-events: none; }
@@ -77,6 +78,7 @@ import { DecimalPipe } from '@angular/common';
 export class AccountsComponent implements OnInit {
   accounts = signal<BankAccount[]>([]);
   navItems = CLIENT_NAV;
+  statusFr = statusFr;
   constructor(private api: ApiService) {}
   ngOnInit() { this.api.getAccounts().subscribe({ next: r => { if (r.data) this.accounts.set(r.data); }, error: () => {} }); }
 }

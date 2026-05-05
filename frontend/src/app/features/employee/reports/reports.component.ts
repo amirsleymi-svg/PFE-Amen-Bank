@@ -5,6 +5,7 @@ import { EMPLOYEE_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { DailyReport } from '../../../core/models/api.models';
 import { DatePipe } from '@angular/common';
+import { statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-employee-reports',
@@ -70,16 +71,16 @@ import { DatePipe } from '@angular/common';
                 <div class="report-entry animate-in" [class.reviewed]="r.status==='REVIEWED'">
                   <div class="flex-between mb-1">
                     <span class="report-title outfit">{{ r.title }}</span>
-                    <span class="status-pill" [class]="'st-' + r.status.toLowerCase()">{{ r.status }}</span>
+                    <span class="status-pill" [class]="'st-' + r.status.toLowerCase()">{{ statusFr(r.status) }}</span>
                   </div>
                   <div class="report-meta outfit">
                     <span class="date">{{ r.reportDate | date:'dd MMM yyyy' }}</span>
-                    @if (r.rating) { <span class="rating">Score: {{ r.rating }}/5</span> }
+                    @if (r.rating) { <span class="rating">Note : {{ r.rating }}/5</span> }
                     @if (r.reviewedByName) { <span class="reviewer">✓ {{ r.reviewedByName }}</span> }
                   </div>
                   @if (r.reviewComment) {
                     <div class="review-comment-box outfit">
-                      <span class="size-xs uppercase opacity-50 block mb-1">Retour Admin:</span>
+                      <span class="size-xs uppercase opacity-50 block mb-1">Retour administrateur :</span>
                       {{ r.reviewComment }}
                     </div>
                   }
@@ -117,7 +118,7 @@ import { DatePipe } from '@angular/common';
     .card-header-premium { background: var(--gray-50); padding: 1.25rem 1.5rem; border-bottom: 2px solid var(--gray-100); font-weight: 800; font-size: 0.85rem; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
     
     .report-list-container { max-height: 700px; overflow-y: auto; }
-    .report-entry { padding: 1.5rem; border-bottom: 1px solid var(--gray-50); transition: background 0.2s; }
+    .report-entry { padding: 1.5rem; border-bottom: 1px solid var(--gray-50); transition: background 0.05s; }
     .report-entry:hover { background: var(--gray-50); }
     .report-entry.reviewed { border-left: 4px solid var(--success); }
     
@@ -148,6 +149,7 @@ export class EmployeeReportsComponent implements OnInit {
   error = signal('');
   expanded = signal<number | null>(null);
   navItems = EMPLOYEE_NAV;
+  statusFr = statusFr;
   today = new Date().toISOString().slice(0, 10);
 
   constructor(private api: ApiService) {}

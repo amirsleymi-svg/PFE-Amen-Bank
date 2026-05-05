@@ -98,7 +98,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
                 <div class="avatar-core">A</div>
               </div>
               <h1>Bonjour {{ firstName() }} <span class="wave">👋</span></h1>
-              <p class="welcome-sub">Je suis votre assistant Amen Bank. Posez-moi une question sur vos comptes, vos cartes, vos virements ou vos credits.</p>
+              <p class="welcome-sub">Je suis votre assistant Amen Bank. Posez-moi une question sur vos comptes, vos cartes, vos virements ou vos crédits.</p>
               <div class="suggestions">
                 @for (s of suggestions; track s.label) {
                   <button class="suggestion-card" (click)="send(s.prompt)">
@@ -130,7 +130,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
                   <span>{{ m.created_at | date:'HH:mm' }}</span>
                   @if (m.role === 'assistant') {
                     <button class="copy-btn" (click)="copy(m.content, m.id)" title="Copier">
-                      {{ copiedId() === m.id ? 'Copie !' : 'Copier' }}
+            {{ copiedId() === m.id ? 'Copié !' : 'Copier' }}
                     </button>
                   }
                 </div>
@@ -179,7 +179,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
           <div class="overlay" (click)="confirmDel.set(null)">
             <div class="dialog" (click)="$event.stopPropagation()">
               <h3>Supprimer la conversation ?</h3>
-              <p>«{{ confirmDel()!.title }}» sera definitivement supprimee.</p>
+              <p>«{{ confirmDel()!.title }}» sera définitivement supprimée.</p>
               <div class="dialog-actions">
                 <button class="btn-secondary" (click)="confirmDel.set(null)">Annuler</button>
                 <button class="btn-danger" (click)="doDelete(confirmDel()!)">Supprimer</button>
@@ -235,7 +235,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
     .conv-item {
       display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
       padding: 0.65rem 0.75rem; border-radius: 8px; cursor: pointer;
-      transition: background 0.18s;
+      transition: background 0.05s;
     }
     .conv-item:hover { background: rgba(255,255,255,0.06); }
     .conv-item.active { background: rgba(30,144,255,0.18); outline: 1px solid rgba(30,144,255,0.35); }
@@ -249,7 +249,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
     .icon-btn {
       background: transparent; color: inherit; border: none; cursor: pointer;
       width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center;
-      transition: background 0.18s;
+      transition: background 0.05s;
     }
     .icon-btn:hover { background: rgba(255,255,255,0.1); }
     .icon-btn.danger:hover { background: rgba(239,68,68,0.25); color: #ffb4b4; }
@@ -275,7 +275,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
       background: linear-gradient(135deg, #1e90ff, #3b5bdb); color: #fff;
       font-weight: 600; font-size: 0.85rem; cursor: pointer;
       box-shadow: 0 6px 16px rgba(30,144,255,0.3);
-      transition: transform 0.15s, box-shadow 0.2s, opacity 0.15s;
+      transition: transform 0.05s, box-shadow 0.2s, opacity 0.15s;
     }
     .new-chat-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(30,144,255,0.4); }
     .new-chat-btn:disabled { opacity: 0.55; cursor: wait; }
@@ -383,7 +383,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
       display: flex; align-items: center; gap: 0.6rem; padding: 0.75rem 0.9rem;
       background: #fff; border: 1px solid #e7ecf3; border-radius: 12px;
       cursor: pointer; text-align: left; font-size: 0.88rem; color: #1a1f29;
-      transition: transform 0.15s, border-color 0.15s, box-shadow 0.2s;
+      transition: transform 0.05s, border-color 0.15s, box-shadow 0.2s;
     }
     .suggestion-card:hover {
       transform: translateY(-2px); border-color: #1e90ff;
@@ -407,7 +407,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
       width: 46px; height: 46px; border-radius: 50%;
       background: linear-gradient(135deg, #1e90ff, #3b5bdb); color: #fff;
       border: none; cursor: pointer; display: grid; place-items: center;
-      transition: transform 0.15s, box-shadow 0.2s;
+      transition: transform 0.05s, box-shadow 0.2s;
       box-shadow: 0 6px 16px rgba(30,144,255,0.35);
     }
     .send-btn:hover:not(:disabled) { transform: scale(1.05); }
@@ -434,7 +434,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
     .btn-secondary, .btn-danger {
       padding: 0.55rem 1.1rem; border: none; border-radius: 8px;
       cursor: pointer; font-size: 0.88rem; font-weight: 500;
-      transition: background 0.15s;
+      transition: background 0.05s;
     }
     .btn-secondary { background: #eef2f7; color: #1a1f29; }
     .btn-secondary:hover { background: #dfe7f1; }
@@ -482,7 +482,7 @@ import { ChatConversation, ChatMessage } from '../../core/models/api.models';
       .chat-page { grid-template-columns: 1fr; }
       .chat-sidebar {
         position: fixed; inset: 0 auto 0 0; width: 280px; z-index: 20;
-        transform: translateX(-100%); transition: transform 0.25s ease;
+        transform: translateX(-100%); transition: transform 0.05s ease;
       }
       .chat-sidebar.open { transform: translateX(0); box-shadow: 24px 0 40px rgba(0,0,0,0.2); }
       .icon-btn.menu { display: grid; }
@@ -526,7 +526,7 @@ export class ChatbotComponent implements OnInit, OnDestroy, AfterViewChecked {
     { icon: '💰', label: 'Quel est le solde de mes comptes ?', prompt: 'Quel est le solde de mes comptes ?' },
     { icon: '📤', label: 'Comment faire un virement ?', prompt: 'Comment effectuer un virement simple ?' },
     { icon: '💳', label: 'Mes cartes bancaires', prompt: 'Montre-moi mes cartes bancaires' },
-    { icon: '🏦', label: 'Simuler un credit', prompt: 'Je veux simuler un credit' },
+    { icon: '🏦', label: 'Simuler un crédit', prompt: 'Je veux simuler un crédit' },
     { icon: '🔔', label: 'Mes notifications non lues', prompt: 'Ai-je des notifications importantes ?' },
     { icon: '📞', label: 'Contact service client', prompt: 'Comment contacter le service client ?' },
   ];
@@ -602,9 +602,9 @@ export class ChatbotComponent implements OnInit, OnDestroy, AfterViewChecked {
       },
       error: e => {
         this.creating.set(false);
-        if (e.status === 0) this.error.set('Le service chatbot n\'est pas demarre (https://localhost:8000).');
-        else if (e.status === 401) this.error.set('Session expiree. Reconnectez-vous.');
-        else this.error.set(e.error?.detail || 'Impossible de creer une nouvelle conversation.');
+        if (e.status === 0) this.error.set('Le service chatbot n\'est pas démarré (https://localhost:8000).');
+        else if (e.status === 401) this.error.set('Session expirée. Reconnectez-vous.');
+        else this.error.set(e.error?.detail || 'Impossible de créer une nouvelle conversation.');
       },
     });
   }
@@ -664,8 +664,8 @@ export class ChatbotComponent implements OnInit, OnDestroy, AfterViewChecked {
         this.loading.set(false);
         this.messages.update(m => m.filter(x => x.id !== tempUser.id));
         this.input = msg;
-        if (e.status === 0) this.error.set('Le service chatbot n\'est pas demarre (https://localhost:8000).');
-        else if (e.status === 401) this.error.set('Session expiree. Reconnectez-vous.');
+        if (e.status === 0) this.error.set('Le service chatbot n\'est pas démarré (https://localhost:8000).');
+        else if (e.status === 401) this.error.set('Session expirée. Reconnectez-vous.');
         else this.error.set(e.error?.detail || 'Erreur de communication avec l\'assistant.');
       },
     });

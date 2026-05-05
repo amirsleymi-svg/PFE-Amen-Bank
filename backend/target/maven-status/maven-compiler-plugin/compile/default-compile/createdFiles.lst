@@ -38,6 +38,7 @@ com\amenbank\dto\response\FraudAlertResponse.class
 com\amenbank\entity\CreditSimulation.class
 com\amenbank\repository\CreditSimulationRepository.class
 com\amenbank\config\SecurityConfig.class
+com\amenbank\dto\response\BadgeResponse.class
 com\amenbank\config\DataInitializer.class
 com\amenbank\service\OtpService.class
 com\amenbank\dto\response\FraudAlertResponse$FraudAlertResponseBuilder.class
@@ -85,6 +86,7 @@ com\amenbank\service\EmployeeService.class
 com\amenbank\service\PasswordResetService.class
 com\amenbank\entity\RefreshToken.class
 com\amenbank\controller\NotificationController.class
+com\amenbank\notification\BadgeRefreshEvent.class
 com\amenbank\notification\EmailService$1.class
 com\amenbank\entity\RefreshToken$RefreshTokenBuilder.class
 com\amenbank\repository\AccountCardRepository.class
@@ -107,6 +109,7 @@ com\amenbank\entity\DailyReport$ReportStatus.class
 com\amenbank\entity\Role.class
 com\amenbank\dto\response\CreditSimulationResponse$ScheduleEntry$ScheduleEntryBuilder.class
 com\amenbank\entity\TwoFactorCode.class
+com\amenbank\dto\response\BadgeResponse$BadgeResponseBuilder.class
 com\amenbank\security\TokenHasher.class
 com\amenbank\dto\request\CreditSimulationRequest.class
 com\amenbank\entity\ResetToken$ResetTokenBuilder.class
@@ -125,10 +128,12 @@ com\amenbank\dto\request\CreditRequestDto.class
 com\amenbank\dto\response\UserResponse.class
 com\amenbank\entity\AuditLog.class
 com\amenbank\entity\CreditRequest$CreditStatus.class
+com\amenbank\controller\BadgeController.class
 com\amenbank\repository\TransferBeneficiaryRepository.class
 com\amenbank\controller\ClientController.class
 com\amenbank\entity\FraudAlert$AlertType.class
 com\amenbank\repository\NotificationRepository.class
+com\amenbank\notification\BadgeRefreshEvent$BadgeRefreshEventBuilder.class
 com\amenbank\security\UserDetailsImpl.class
 com\amenbank\entity\DailyReport$DailyReportBuilder.class
 com\amenbank\entity\Permission.class
@@ -167,6 +172,7 @@ com\amenbank\dto\response\SecurityIncidentResponse.class
 com\amenbank\dto\request\GroupedTransferRequest.class
 com\amenbank\dto\response\SecurityIncidentResponse$SecurityIncidentResponseBuilder.class
 com\amenbank\entity\ResetToken.class
+com\amenbank\service\BadgeService.class
 com\amenbank\dto\response\SuspiciousUserResponse.class
 com\amenbank\controller\PasswordResetController.class
 com\amenbank\dto\response\PasswordResetRequestResponse.class

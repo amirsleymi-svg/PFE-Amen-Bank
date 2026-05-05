@@ -45,8 +45,24 @@ public class NotificationWebSocketHandler extends TextWebSocketHandler {
             try {
                 String payload = objectMapper.writeValueAsString(event);
                 session.sendMessage(new TextMessage(payload));
-            } catch (IOException ignored) {
-                // Keep REST notification persistence resilient even if websocket send fails.
+            } catch (IOException ignored) {}
+        });
+    }
+
+    public void broadcastBadgeRefresh() {
+        BadgeRefreshEvent event = new BadgeRefreshEvent();
+        String payload;
+        try {
+            payload = objectMapper.writeValueAsString(event);
+        } catch (IOException e) {
+            return;
+        }
+
+        sessions.forEach((sessionId, session) -> {
+            if (session.isOpen()) {
+                try {
+                    session.sendMessage(new TextMessage(payload));
+                } catch (IOException ignored) {}
             }
         });
     }

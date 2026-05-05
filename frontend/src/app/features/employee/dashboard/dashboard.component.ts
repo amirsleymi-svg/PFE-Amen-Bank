@@ -1,16 +1,18 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { EMPLOYEE_NAV } from '../../../shared/nav-items';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-employee-dashboard',
-  imports: [SidebarComponent, RouterLink],
+  imports: [SidebarComponent, NavbarComponent, RouterLink],
   template: `
     <div class="layout">
       <app-sidebar [items]="navItems" />
       <main class="main-content">
+        <app-navbar />
         <div class="page-header">
           <div class="flex-between align-end">
             <div>
@@ -78,7 +80,7 @@ import { AuthService } from '../../../core/services/auth.service';
     .premium-action-card {
       text-decoration: none; display: flex; align-items: center; gap: 1.25rem;
       padding: 1.75rem; border: 1px solid var(--gray-100); border-radius: var(--radius-lg);
-      background: white; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: white; transition: all 0.05s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative; overflow: hidden;
     }
     .premium-action-card:hover {
@@ -91,7 +93,7 @@ import { AuthService } from '../../../core/services/auth.service';
     .card-content h3 { font-size: 1.1rem; color: var(--primary); margin-bottom: 0.25rem; }
     .card-content p { font-size: 0.8rem; color: var(--gray-500); margin: 0; }
     
-    .card-arrow { font-size: 1.25rem; color: var(--accent); opacity: 0.3; transition: all 0.2s; margin-left: auto; }
+    .card-arrow { font-size: 1.25rem; color: var(--accent); opacity: 0.3; transition: all 0.05s; margin-left: auto; }
   `]
 })
 export class EmployeeDashboardComponent {

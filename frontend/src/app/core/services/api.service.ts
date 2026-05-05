@@ -317,20 +317,32 @@ export class ApiService {
   }
 
   // === Notifications ===
-  getNotifications(page = 0): Observable<ApiResponse> {
-    return this.http.get<ApiResponse>(`${this.API}/notifications`, { params: new HttpParams().set('page', page) });
+  getNotifications(page = 0, userId?: number): Observable<ApiResponse> { // IMPROVED
+    let params = new HttpParams().set('page', page);
+    if (userId) params = params.set('userId', userId);
+    return this.http.get<ApiResponse>(`${this.API}/notifications`, { params });
   }
 
-  getUnreadCount(): Observable<ApiResponse<{ count: number }>> {
-    return this.http.get<ApiResponse<{ count: number }>>(`${this.API}/notifications/unread-count`);
+  getUnreadCount(userId?: number): Observable<ApiResponse<{ count: number }>> { // IMPROVED
+    let params = new HttpParams();
+    if (userId) params = params.set('userId', userId);
+    return this.http.get<ApiResponse<{ count: number }>>(`${this.API}/notifications/unread-count`, { params });
   }
 
   markAsRead(id: number): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.API}/notifications/${id}/read`, {});
+    return this.http.patch<ApiResponse>(`${this.API}/notifications/${id}/read`, {}); // IMPROVED
   }
 
   markAllAsRead(): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.API}/notifications/read-all`, {});
+  }
+
+  deleteNotification(id: number): Observable<ApiResponse> {
+    return this.http.delete<ApiResponse>(`${this.API}/notifications/${id}`);
+  }
+
+  deleteAllNotifications(): Observable<ApiResponse> {
+    return this.http.delete<ApiResponse>(`${this.API}/notifications`);
   }
 
   // === Chatbot (FastAPI microservice on port 8000) ===
@@ -360,5 +372,14 @@ export class ApiService {
       conversation_id: conversationId,
       message
     });
+  }
+
+  // === Badges ===
+  getBadgeCounts(): Observable<ApiResponse<{ counts: { [key: string]: number } }>> {
+    return this.http.get<ApiResponse<{ counts: { [key: string]: number } }>>(`${this.API}/badges/counts`);
+  }
+
+  markBadgesSeen(): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.API}/badges/mark-seen`, {});
   }
 }

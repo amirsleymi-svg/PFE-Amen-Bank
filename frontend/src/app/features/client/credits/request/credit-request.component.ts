@@ -14,8 +14,8 @@ import { CreditSimulation } from '../../../../core/models/api.models';
       <app-sidebar [items]="navItems" />
       <main class="main-content">
         <div class="page-header">
-          <h1>Demande de credit</h1>
-          <p class="subtitle">Ajustez les parametres et verifiez la mensualite avant de soumettre votre demande.</p>
+          <h1>Demande de crédit</h1>
+          <p class="subtitle">Ajustez les paramètres et vérifiez la mensualité avant de soumettre votre demande.</p>
         </div>
 
         @if (success()) { <div class="alert alert-success">{{ success() }}</div> }
@@ -24,7 +24,7 @@ import { CreditSimulation } from '../../../../core/models/api.models';
         <div class="req-grid">
           <!-- Interactive form -->
           <div class="card">
-            <h3 class="mb-2">Parametres du credit</h3>
+            <h3 class="mb-2">Paramètres du crédit</h3>
 
             <div class="form-group">
               <label>Montant <span class="muted">(TND)</span></label>
@@ -36,7 +36,7 @@ import { CreditSimulation } from '../../../../core/models/api.models';
             </div>
 
             <div class="form-group">
-              <label>Duree <span class="muted">(mois)</span></label>
+              <label>Durée <span class="muted">(mois)</span></label>
               <div class="input-with-slider">
                 <input type="number" [(ngModel)]="duration" name="duration" min="6" max="360" (ngModelChange)="liveSimulate()">
                 <input type="range" min="6" max="360" step="1" [(ngModel)]="duration" (ngModelChange)="liveSimulate()">
@@ -54,8 +54,8 @@ import { CreditSimulation } from '../../../../core/models/api.models';
             </div>
 
             <div class="form-group">
-              <label>Objet du credit</label>
-              <textarea [(ngModel)]="purpose" name="purpose" rows="3" placeholder="Ex: achat vehicule, renovation, etudes..."></textarea>
+              <label>Objet du crédit</label>
+              <textarea [(ngModel)]="purpose" name="purpose" rows="3" placeholder="Ex: achat véhicule, rénovation, études..."></textarea>
             </div>
 
             <button type="button" class="btn btn-primary btn-block" (click)="submitRequest()" [disabled]="loading() || !result()">
@@ -66,22 +66,22 @@ import { CreditSimulation } from '../../../../core/models/api.models';
           <!-- Live preview -->
           @if (result(); as r) {
             <div class="card summary-card">
-              <h3 class="mb-2">Apercu de la mensualite</h3>
+              <h3 class="mb-2">Aperçu de la mensualité</h3>
               <div class="summary-grid">
                 <div class="summary-cell">
-                  <span class="cell-label">Mensualite</span>
+                  <span class="cell-label">Mensualité</span>
                   <span class="cell-value primary">{{ r.monthlyPayment | number:'1.3-3' }} TND</span>
                 </div>
                 <div class="summary-cell">
-                  <span class="cell-label">Cout total</span>
+                  <span class="cell-label">Coût total</span>
                   <span class="cell-value">{{ r.totalCost | number:'1.3-3' }} TND</span>
                 </div>
                 <div class="summary-cell">
-                  <span class="cell-label">Total interets</span>
+                  <span class="cell-label">Total intérêts</span>
                   <span class="cell-value danger">{{ r.totalInterest | number:'1.3-3' }} TND</span>
                 </div>
                 <div class="summary-cell">
-                  <span class="cell-label">Duree</span>
+                  <span class="cell-label">Durée</span>
                   <span class="cell-value">{{ r.durationMonths }} mois</span>
                 </div>
               </div>
@@ -91,13 +91,13 @@ import { CreditSimulation } from '../../../../core/models/api.models';
               </div>
               <div class="ratio-legend">
                 <span><i class="dot dot-p"></i> Capital {{ principalRatio().toFixed(1) }}%</span>
-                <span><i class="dot dot-i"></i> Interets {{ interestRatio().toFixed(1) }}%</span>
+                <span><i class="dot dot-i"></i> Intérêts {{ interestRatio().toFixed(1) }}%</span>
               </div>
-              <p class="hint">Cet apercu est indicatif. Le taux definitif sera valide par votre conseiller Amen.</p>
+              <p class="hint">Cet aperçu est indicatif. Le taux définitif sera validé par votre conseiller Amen.</p>
             </div>
           } @else {
             <div class="card summary-card empty">
-              <p class="muted">Saisissez des parametres valides pour obtenir un apercu de la mensualite.</p>
+              <p class="muted">Saisissez des paramètres valides pour obtenir un aperçu de la mensualité.</p>
             </div>
           }
         </div>
@@ -187,7 +187,7 @@ export class CreditRequestComponent {
 
   submitRequest() {
     if (!this.isValid()) {
-      this.error.set('Parametres invalides.');
+      this.error.set('Paramètres invalides.');
       return;
     }
     this.loading.set(true);
@@ -200,7 +200,7 @@ export class CreditRequestComponent {
     }).subscribe({
       next: () => {
         this.loading.set(false);
-        this.success.set('Demande soumise avec succes. Un conseiller Amen vous contactera prochainement.');
+        this.success.set('Demande soumise avec succès. Un conseiller Amen vous contactera prochainement.');
         this.purpose = '';
       },
       error: e => {

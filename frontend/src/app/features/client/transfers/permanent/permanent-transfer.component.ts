@@ -82,7 +82,7 @@ import { DecimalPipe } from '@angular/common';
     .premium-card { padding: 2.5rem; border: 1px solid var(--gray-100); box-shadow: var(--shadow-lg); }
     .premium-input { 
       width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius); 
-      border: 1px solid var(--gray-200); font-size: 0.9rem; transition: all 0.2s;
+      border: 1px solid var(--gray-200); font-size: 0.9rem; transition: all 0.05s;
     }
     .premium-input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.1); }
     .iban-font { font-family: monospace; letter-spacing: 0.05em; }
@@ -110,7 +110,7 @@ export class PermanentTransferComponent implements OnInit {
   onSubmit() {
     this.loading.set(true); this.error.set(''); this.success.set('');
     this.api.permanentTransfer(this.form).subscribe({
-      next: () => { this.loading.set(false); this.success.set('Virement permanent planifie.'); },
+      next: () => { this.loading.set(false); this.success.set('Virement permanent planifié.'); },
       error: (e) => { this.loading.set(false); this.error.set(e.error?.message || 'Erreur'); }
     });
   }

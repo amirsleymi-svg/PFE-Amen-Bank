@@ -6,6 +6,7 @@ import { ADMIN_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models/api.models';
+import { statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-admin-users',
@@ -16,8 +17,8 @@ import { User } from '../../../core/models/api.models';
       <main class="main-content">
         <div class="page-header flex-between">
           <div>
-            <h1 class="outfit">Repertoire des Utilisateurs</h1>
-            <p class="subtitle outfit">Gestion des acces, roles et permissions administratives.</p>
+            <h1 class="outfit">Répertoire des utilisateurs</h1>
+            <p class="subtitle outfit">Gestion des accès, rôles et permissions administratives.</p>
           </div>
           <button class="btn btn-primary outfit" (click)="showCreate = !showCreate">
             {{ showCreate ? 'Fermer' : '+ Nouvel Utilisateur' }}
@@ -30,11 +31,11 @@ import { User } from '../../../core/models/api.models';
 
         @if (showCreate) {
           <div class="card premium-card animate-in mb-3">
-            <h3 class="outfit mb-2">Creation de Profil</h3>
+            <h3 class="outfit mb-2">Création de profil</h3>
             <form (ngSubmit)="onCreate()" class="premium-form">
               <div class="form-grid">
                 <div class="form-group">
-                  <label class="outfit">Prenom</label>
+                  <label class="outfit">Prénom</label>
                   <input [(ngModel)]="newUser.firstName" name="fn" required class="premium-input" placeholder="Ex: Jean">
                 </div>
                 <div class="form-group">
@@ -43,7 +44,7 @@ import { User } from '../../../core/models/api.models';
                 </div>
               </div>
               <div class="form-group mt-1">
-                <label class="outfit">Email Professionnel</label>
+                <label class="outfit">Adresse e-mail professionnelle</label>
                 <input type="email" [(ngModel)]="newUser.email" name="email" required class="premium-input" placeholder="email@amenbank.com.tn">
               </div>
               <div class="form-grid mt-1">
@@ -52,17 +53,17 @@ import { User } from '../../../core/models/api.models';
                   <input [(ngModel)]="newUser.username" name="un" required class="premium-input" placeholder="Identifiant unique">
                 </div>
                 <div class="form-group">
-                  <label class="outfit">Telephone</label>
+                  <label class="outfit">Téléphone</label>
                   <input [(ngModel)]="newUser.phone" name="phone" class="premium-input" placeholder="+216 XX XXX XXX">
                 </div>
               </div>
               <div class="form-group mt-1">
-                <label class="outfit">Role Attribue</label>
+                <label class="outfit">Rôle attribué</label>
                 <select [(ngModel)]="newUser.role" name="role" required class="premium-select">
-                  <option value="EMPLOYEE">Employe Operationnel</option>
-                  @if (isRootAdmin()) { <option value="ADMIN">Administrateur Systeme</option> }
+                  <option value="EMPLOYEE">Employé opérationnel</option>
+                  @if (isRootAdmin()) { <option value="ADMIN">Administrateur système</option> }
                 </select>
-                <p class="form-hint">Un email d'activation sera envoye automatiquement au nouvel utilisateur.</p>
+                <p class="form-hint">Un e-mail d'activation sera envoyé automatiquement au nouvel utilisateur.</p>
               </div>
               <button type="submit" class="btn btn-primary btn-block outfit mt-2">CONFIRMER LA CREATION</button>
             </form>
@@ -75,8 +76,8 @@ import { User } from '../../../core/models/api.models';
               <h3 class="outfit color-white">Suppression de Compte</h3>
               <p class="mb-2">Confirmez-vous la suppression de l'utilisateur <strong>{{ confirmDeleteUser()!.firstName }} {{ confirmDeleteUser()!.lastName }}</strong> ?</p>
               <div class="warning-box mb-2">
-                <p class="size-xs text-danger uppercase font-bold">Action irreversible</p>
-                <p class="size-xs color-gray-400">Toutes les donnees historiques et acces lies seront revoques immediatement.</p>
+                <p class="size-xs text-danger uppercase font-bold">Action irréversible</p>
+                <p class="size-xs color-gray-400">Toutes les données historiques et accès liés seront révoqués immédiatement.</p>
               </div>
               <div class="flex gap-1">
                 <button class="btn btn-ghost" (click)="confirmDeleteUser.set(null)">Annuler</button>
@@ -91,20 +92,20 @@ import { User } from '../../../core/models/api.models';
         @if (roleChangeUser()) {
           <div class="overlay animate-in" (click)="roleChangeUser.set(null)">
             <div class="dialog glass-style" (click)="$event.stopPropagation()">
-              <h3 class="outfit">Modification de Role</h3>
+              <h3 class="outfit">Modification de rôle</h3>
               <p class="mb-2">Utilisateur : <span class="font-bold">{{ roleChangeUser()!.firstName }} {{ roleChangeUser()!.lastName }}</span></p>
               <div class="form-group mb-2">
                 <label class="outfit size-xs uppercase color-gray-400">Nouveau privilege</label>
                 <select [(ngModel)]="selectedNewRole" class="premium-select">
-                  <option value="CLIENT">Client Standard</option>
-                  <option value="EMPLOYEE">Employe de Banque</option>
+                  <option value="CLIENT">Client standard</option>
+                  <option value="EMPLOYEE">Employé de banque</option>
                   @if (isRootAdmin()) { <option value="ADMIN">Administrateur</option> }
                 </select>
               </div>
               <div class="flex gap-1">
                 <button class="btn btn-ghost" (click)="roleChangeUser.set(null)">Annuler</button>
                 <button class="btn btn-primary" (click)="onConfirmRoleChange()" [disabled]="changingRole() || selectedNewRole === roleChangeUser()!.role">
-                  {{ changingRole() ? 'Mise a jour...' : 'Confirmer le role' }}
+                  {{ changingRole() ? 'Mise à jour...' : 'Confirmer le rôle' }}
                 </button>
               </div>
             </div>
@@ -116,11 +117,11 @@ import { User } from '../../../core/models/api.models';
             <table class="premium-table">
               <thead>
                 <tr>
-                  <th class="outfit">Identite</th>
-                  <th class="outfit">Coordonnees</th>
-                  <th class="outfit">Role / Acces</th>
+                  <th class="outfit">Identité</th>
+                  <th class="outfit">Coordonnées</th>
+                  <th class="outfit">Rôle / Accès</th>
                   <th class="outfit">Statut</th>
-                  <th class="outfit">Creation</th>
+                  <th class="outfit">Création</th>
                   <th class="outfit text-right">Actions</th>
                 </tr>
               </thead>
@@ -145,14 +146,14 @@ import { User } from '../../../core/models/api.models';
                     <td><span class="badge-role" [class]="'role-' + u.role.toLowerCase()">{{ roleLabel(u.role) }}</span></td>
                     <td>
                       <span class="status-indicator" [class]="'st-' + u.status.toLowerCase()">
-                        <span class="dot"></span> {{ u.status }}
+                        <span class="dot"></span> {{ statusFr(u.status) }}
                       </span>
                     </td>
                     <td class="color-gray size-xs">{{ u.createdAt | date:'dd MMM yyyy' }}</td>
                     <td>
                       <div class="flex gap-1 justify-end">
                         @if (canChangeRole(u)) {
-                          <button class="btn btn-ghost btn-sm outfit font-bold" (click)="openRoleChange(u)">ROLE</button>
+                          <button class="btn btn-ghost btn-sm outfit font-bold" (click)="openRoleChange(u)">RÔLE</button>
                         }
                         @if (canDeleteUser(u)) {
                           <button class="btn btn-ghost btn-danger-text btn-sm" (click)="confirmDeleteUser.set(u)">x</button>
@@ -208,6 +209,7 @@ export class AdminUsersComponent implements OnInit {
   newUser: any = { firstName: '', lastName: '', email: '', username: '', phone: '', role: 'EMPLOYEE' };
 
   navItems = ADMIN_NAV;
+  statusFr = statusFr;
   constructor(private api: ApiService, private auth: AuthService) {}
 
   isRootAdmin() { return !!this.auth.user()?.rootAdmin; }
@@ -228,8 +230,8 @@ export class AdminUsersComponent implements OnInit {
   roleLabel(role: string): string {
     switch (role) {
       case 'CLIENT': return 'Client';
-      case 'EMPLOYEE': return 'Employe';
-      case 'ADMIN': return 'Admin';
+      case 'EMPLOYEE': return 'Employé';
+      case 'ADMIN': return 'Administrateur';
       default: return role;
     }
   }
@@ -243,7 +245,7 @@ export class AdminUsersComponent implements OnInit {
   onCreate() {
     this.api.createUser(this.newUser).subscribe({
       next: () => {
-        this.showMsg('Utilisateur cree. Un email d\'activation lui a ete envoye.');
+        this.showMsg('Utilisateur créé. Un e-mail d\'activation lui a été envoyé.');
         this.showCreate = false;
         this.newUser = { firstName: '', lastName: '', email: '', username: '', phone: '', role: 'EMPLOYEE' };
         this.load();
@@ -254,7 +256,7 @@ export class AdminUsersComponent implements OnInit {
 
   openRoleChange(user: User) {
     if (!this.canChangeRole(user)) {
-      this.showMsg('Vous n\'avez pas les droits pour changer ce role', true);
+      this.showMsg('Vous n\'avez pas les droits pour changer ce rôle', true);
       return;
     }
     this.roleChangeUser.set(user);
@@ -269,13 +271,13 @@ export class AdminUsersComponent implements OnInit {
       next: () => {
         this.changingRole.set(false);
         this.roleChangeUser.set(null);
-        this.showMsg(`Role de ${user.firstName} ${user.lastName} change en ${this.roleLabel(this.selectedNewRole)}`);
+        this.showMsg(`Rôle de ${user.firstName} ${user.lastName} changé en ${this.roleLabel(this.selectedNewRole)}`);
         this.load();
       },
       error: (e) => {
         this.changingRole.set(false);
         this.roleChangeUser.set(null);
-        this.showMsg(e.error?.message || 'Erreur lors du changement de role', true);
+        this.showMsg(e.error?.message || 'Erreur lors du changement de rôle', true);
       }
     });
   }
@@ -288,7 +290,7 @@ export class AdminUsersComponent implements OnInit {
       next: () => {
         this.deleting.set(false);
         this.confirmDeleteUser.set(null);
-        this.showMsg(`Utilisateur ${user.firstName} ${user.lastName} supprime`);
+        this.showMsg(`Utilisateur ${user.firstName} ${user.lastName} supprimé`);
         this.load();
       },
       error: (e) => {

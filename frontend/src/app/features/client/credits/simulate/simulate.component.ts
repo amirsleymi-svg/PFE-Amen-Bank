@@ -95,7 +95,7 @@ import { DecimalPipe, DatePipe, UpperCasePipe } from '@angular/common';
               <div class="summary-actions mt-3">
                 <button class="btn btn-ghost btn-sm" (click)="exportCsv()" [disabled]="!r.schedule?.length">📥 CSV</button>
                 <button class="btn btn-ghost btn-sm" (click)="printSchedule()" [disabled]="!r.schedule?.length">🖨️ PDF</button>
-                <button class="btn btn-accent btn-sm">Postuler maintenant</button>
+                <button class="btn btn-accent btn-sm" (click)="onApply()">Demander ce crédit</button>
               </div>
             </div>
           }
@@ -118,9 +118,9 @@ import { DecimalPipe, DatePipe, UpperCasePipe } from '@angular/common';
                     <th class="outfit">N°</th>
                     <th class="outfit">Échéance</th>
                     <th class="text-right outfit">Mensualité</th>
-                    <th class="text-right outfit">Principal</th>
+                    <th class="text-right outfit">Capital</th>
                     <th class="text-right outfit">Intérêts</th>
-                    <th class="text-right outfit">Solde Restant</th>
+                    <th class="text-right outfit">Solde restant</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -235,7 +235,7 @@ export class SimulateComponent {
 
   recalculateNow() {
     if (!this.isValid()) {
-      this.error.set('Verifiez les parametres (montant >= 1000, duree >= 6, taux > 0).');
+      this.error.set('Vérifiez les paramètres (montant >= 1000, durée >= 6, taux > 0).');
       return;
     }
     clearTimeout(this.debounce);
@@ -264,7 +264,7 @@ export class SimulateComponent {
   exportCsv() {
     const r = this.result();
     if (!r?.schedule?.length) return;
-    const header = 'Mois;Echeance;Mensualite;Capital;Interets;Capital restant';
+    const header = 'Mois;Échéance;Mensualité;Capital;Intérêts;Capital restant';
     const rows = r.schedule.map(s =>
       `${s.month};${new Date(s.dueDate).toLocaleDateString('fr-FR')};${s.payment};${s.principalPart};${s.interestPart};${s.remainingBalance}`
     );
@@ -280,5 +280,9 @@ export class SimulateComponent {
 
   printSchedule() {
     window.print();
+  }
+
+  onApply() {
+    console.log('Demander ce crédit clicked');
   }
 }

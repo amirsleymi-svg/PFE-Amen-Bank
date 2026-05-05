@@ -124,6 +124,6 @@ export class AdminRegistrationsComponent implements OnInit {
   constructor(private api: ApiService) {}
   ngOnInit() { this.load(); }
   load() { this.api.getRegistrationRequests().subscribe({ next: r => { if (r.data?.content) this.requests.set(r.data.content); }, error: () => {} }); }
-  approve(id: number) { this.api.approveRegistration(id).subscribe({ next: () => { this.msg.set('Inscription approuvee'); this.load(); }, error: () => this.msg.set('Erreur') }); }
-  reject(id: number) { this.api.rejectRegistration(id, 'Refuse').subscribe({ next: () => { this.msg.set('Inscription rejetee'); this.load(); }, error: () => this.msg.set('Erreur') }); }
+  approve(id: number) { this.api.approveRegistration(id).subscribe({ next: () => { this.msg.set('Inscription approuvée'); this.load(); }, error: () => this.msg.set('Erreur') }); }
+  reject(id: number) { this.api.rejectRegistration(id, 'Refusée').subscribe({ next: () => { this.msg.set('Inscription rejetée'); this.load(); }, error: () => this.msg.set('Erreur') }); }
 }

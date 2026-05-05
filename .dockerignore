@@ -1,0 +1,14 @@
+node_modules
+dist
+target
+.git
+.vscode
+.idea
+*.log
+.env
+.venv
+__pycache__
+*.pyc
+Dockerfile
+docker-compose.yml
+.dockerignore

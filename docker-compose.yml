@@ -1,0 +1,88 @@
+services:
+  db:
+    image: mariadb:10.11
+    container_name: amen-bank-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: amen_bank
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: amen-bank-ollama
+    restart: always
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  # Helper service to pull the model
+  ollama-pull:
+    image: curlimages/curl:latest
+    container_name: amen-bank-ollama-pull
+    depends_on:
+      - ollama
+    entrypoint: [ "sh", "-c", "sleep 5 && curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"llama3.2:1b\"}'" ]
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: amen-bank-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/amen_bank?useSSL=false&serverTimezone=Africa/Tunis&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SERVER_SSL_ENABLED: "false" # Use HTTP internally
+      SERVER_PORT: 8443
+    ports:
+      - "8443:8443"
+
+  chatbot:
+    build:
+      context: ./chatbot
+      dockerfile: Dockerfile
+    container_name: amen-bank-chatbot
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    environment:
+      DATABASE_URL: mysql+aiomysql://root:root@db:3306/amen_bank
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: llama3.2:1b
+      ALLOWED_ORIGINS: "*"
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: amen-bank-frontend
+    restart: always
+    depends_on:
+      - backend
+      - chatbot
+    ports:
+      - "80:80"
+
+volumes:
+  db_data:
+  ollama_data:

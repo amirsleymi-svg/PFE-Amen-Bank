@@ -5,6 +5,7 @@ import { ADMIN_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { Transaction } from '../../../core/models/api.models';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-admin-transfers',
@@ -21,10 +22,10 @@ import { DecimalPipe, DatePipe } from '@angular/common';
           <select [(ngModel)]="filterStatus" (ngModelChange)="load()" class="filter-select">
             <option value="">Tous les statuts</option>
             <option value="PENDING">En attente</option>
-            <option value="APPROVED">Approuves</option>
-            <option value="EXECUTED">Executes</option>
-            <option value="REJECTED">Rejetes</option>
-            <option value="FAILED">Echoues</option>
+            <option value="APPROVED">Approuvés</option>
+            <option value="EXECUTED">Exécutés</option>
+            <option value="REJECTED">Rejetés</option>
+            <option value="FAILED">Échoués</option>
           </select>
         </div>
 
@@ -74,7 +75,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
                     [class.badge-info]="t.status==='APPROVED'"
                     [class.badge-success]="t.status==='EXECUTED'"
                     [class.badge-danger]="t.status==='REJECTED'||t.status==='FAILED'">
-                    {{ t.status }}
+                    {{ statusFr(t.status) }}
                   </span>
                 </td>
                 <td>{{ t.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -135,6 +136,7 @@ export class AdminTransfersComponent implements OnInit {
   transfers = signal<Transaction[]>([]);
   filterStatus = '';
   navItems = ADMIN_NAV;
+  statusFr = statusFr;
 
   autoCount = computed(() => this.transfers().filter(t => this.isAutoApproved(t)).length);
   manualCount = computed(() => this.transfers().filter(t => !!t.approvedByName).length);

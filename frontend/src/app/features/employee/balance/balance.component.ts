@@ -208,8 +208,8 @@ export class EmployeeBalanceComponent implements OnInit {
   }
 
   disabledReason(): string {
-    if (!this.selectedClientId()) return 'Selectionnez un client';
-    if (!this.selectedAccountId()) return 'Selectionnez un compte';
+    if (!this.selectedClientId()) return 'Sélectionnez un client';
+    if (!this.selectedAccountId()) return 'Sélectionnez un compte';
     if (this.amount() <= 0) return 'Saisissez un montant > 0';
     return '';
   }
@@ -234,7 +234,7 @@ export class EmployeeBalanceComponent implements OnInit {
     this.api.increaseBalance(accId, amt).subscribe({
       next: () => {
         this.loading.set(false);
-        this.showMsg(`Solde de ${client?.name ?? 'client'} augmente de ${amt} TND. Notification envoyee.`);
+        this.showMsg(`Solde de ${client?.name ?? 'client'} augmenté de ${amt} TND. Notification envoyée.`);
         this.selectedClientId.set(null);
         this.selectedAccountId.set(null);
         this.amount.set(0);
@@ -243,7 +243,7 @@ export class EmployeeBalanceComponent implements OnInit {
       },
       error: e => {
         this.loading.set(false);
-        this.showMsg(e.error?.message || 'Erreur lors de la mise a jour.', true);
+        this.showMsg(e.error?.message || 'Erreur lors de la mise à jour.', true);
       }
     });
   }

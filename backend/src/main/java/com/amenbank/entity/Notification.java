@@ -32,6 +32,9 @@ public class Notification {
     @Builder.Default
     private Boolean isRead = false;
 
+    @Column(length = 50) // ADDED
+    private String role; // ADDED
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

@@ -7,6 +7,7 @@ import com.amenbank.entity.Transaction;
 import com.amenbank.entity.User;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.NotificationService;
+import com.amenbank.notification.NotificationWebSocketHandler;
 import com.amenbank.repository.FraudAlertRepository;
 import com.amenbank.repository.TransactionRepository;
 import com.amenbank.repository.UserRepository;
@@ -30,6 +31,7 @@ public class FraudDetectionService {
 
     private final FraudAlertRepository fraudAlertRepository;
     private final NotificationService notificationService;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
 
@@ -70,6 +72,7 @@ public class FraudDetectionService {
             notifyAdmins("Alerte fraude - Montant eleve",
                     "Transaction " + transaction.getReference() + " de " + amount +
                             " TND detectee. Severite: " + severity.name());
+            notificationWebSocketHandler.broadcastBadgeRefresh();
         }
 
         checkVelocity(transaction);
@@ -108,6 +111,7 @@ public class FraudDetectionService {
                 recentCount + " transactions detectees en " + velocityWindowMinutes +
                         " minutes sur le compte " + transaction.getSourceAccount().getAccountNumber() +
                         ". Severite: " + severity.name());
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     private void notifyAdmins(String title, String message) {
@@ -136,6 +140,7 @@ public class FraudDetectionService {
         alert.setReviewedAt(LocalDateTime.now());
         alert.setReviewComment(comment);
         fraudAlertRepository.save(alert);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     /**
@@ -172,7 +177,7 @@ public class FraudDetectionService {
         alert.setReviewedAt(LocalDateTime.now());
         alert.setReviewComment(comment);
         fraudAlertRepository.save(alert);
-
+        notificationWebSocketHandler.broadcastBadgeRefresh();
         return clientId;
     }
 

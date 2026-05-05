@@ -5,6 +5,7 @@ import { ADMIN_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { AuditLog } from '../../../core/models/api.models';
 import { DatePipe } from '@angular/common';
+import { auditActionFr, entityTypeFr } from '../../../shared/display-labels';
 
 type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | 'activate' | 'login' | 'fraud' | 'other';
 
@@ -18,7 +19,7 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
         <div class="page-header flex-between">
           <div>
             <h1 class="outfit">Journal de Sécurité</h1>
-            <p class="subtitle">Traçabilité forensic et supervision des flux administratifs.</p>
+            <p class="subtitle">Traçabilité d'audit et supervision des flux administratifs.</p>
           </div>
           @if (logs().length) {
             <button class="btn btn-ghost btn-danger-text" (click)="showConfirmAll.set(true)">Effacer l'historique</button>
@@ -57,7 +58,7 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
             <input
               class="premium-input outfit"
               type="text"
-              placeholder="🔍 Recherche forensic (IP, utilisateur, détails...)"
+              placeholder="🔍 Recherche d'audit (IP, utilisateur, détails...)"
               [ngModel]="search()"
               (ngModelChange)="search.set($event)" />
           </div>
@@ -106,9 +107,9 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
               </div>
               <div class="detail-grid">
                 <div class="detail-item"><span class="k outfit">Opérateur</span><span class="v outfit font-bold">{{ s.userName }}</span></div>
-                <div class="detail-item"><span class="k outfit">Action</span><span class="v"><span class="badge" [class]="'badge-' + categoryOf(s.action)">{{ s.action }}</span></span></div>
-                <div class="detail-item"><span class="k outfit">Cible</span><span class="v">{{ s.entityType }} <small class="text-muted">#{{ s.entityId }}</small></span></div>
-                <div class="detail-item"><span class="k outfit">Terminal IP</span><span class="v code">{{ s.ipAddress || 'Interne' }}</span></div>
+                <div class="detail-item"><span class="k outfit">Action</span><span class="v"><span class="badge" [class]="'badge-' + categoryOf(s.action)">{{ auditActionFr(s.action) }}</span></span></div>
+                <div class="detail-item"><span class="k outfit">Cible</span><span class="v">{{ entityTypeFr(s.entityType) }} <small class="text-muted">#{{ s.entityId }}</small></span></div>
+                <div class="detail-item"><span class="k outfit">Adresse IP</span><span class="v code">{{ s.ipAddress || 'Interne' }}</span></div>
                 <div class="detail-item"><span class="k outfit">Horodatage</span><span class="v">{{ s.createdAt | date:'dd/MM/yyyy HH:mm:ss' }}</span></div>
               </div>
               <div class="detail-block mt-2">
@@ -127,7 +128,7 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
                   <th class="outfit">Opérateur</th>
                   <th class="outfit">Action</th>
                   <th class="outfit">Entité</th>
-                  <th class="outfit">IP Address</th>
+                  <th class="outfit">Adresse IP</th>
                   <th class="outfit">Date</th>
                   <th class="outfit text-right">Contrôle</th>
                 </tr>
@@ -136,9 +137,9 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
                 @for (l of filtered(); track l.id) {
                   <tr class="log-row animate-in" (click)="selected.set(l)">
                     <td class="font-bold color-primary">{{ l.userName }}</td>
-                    <td><span class="badge" [class]="'badge-' + categoryOf(l.action)">{{ l.action }}</span></td>
+                    <td><span class="badge" [class]="'badge-' + categoryOf(l.action)">{{ auditActionFr(l.action) }}</span></td>
                     <td>
-                      <span class="entity-tag">{{ l.entityType }}</span>
+                      <span class="entity-tag">{{ entityTypeFr(l.entityType) }}</span>
                     </td>
                     <td><code class="ip-address">{{ l.ipAddress || '—' }}</code></td>
                     <td class="color-gray size-sm">{{ l.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -187,7 +188,7 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
     .premium-table { width: 100%; border-collapse: collapse; }
     .premium-table th { background: var(--gray-50); padding: 1.25rem; font-size: 0.7rem; font-weight: 800; color: var(--gray-400); text-transform: uppercase; border-bottom: 2px solid var(--gray-100); text-align: left; }
     .premium-table td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--gray-50); }
-    .log-row { cursor: pointer; transition: all 0.2s; }
+    .log-row { cursor: pointer; transition: all 0.05s; }
     .log-row:hover { background: var(--gray-50); }
 
     .badge { padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; }
@@ -224,6 +225,8 @@ export class AuditLogsComponent implements OnInit {
   category = signal<string>('');
   entityFilter = signal<string>('');
   selected = signal<AuditLog | null>(null);
+  auditActionFr = auditActionFr;
+  entityTypeFr = entityTypeFr;
 
   constructor(private api: ApiService) {}
 
@@ -301,7 +304,7 @@ export class AuditLogsComponent implements OnInit {
 
   deleteLog(id: number) {
     this.api.deleteAuditLog(id).subscribe({
-      next: () => { this.showMsg('Log supprime'); this.load(); },
+      next: () => { this.showMsg('Journal supprimé'); this.load(); },
       error: (e) => this.showMsg(e.error?.message || 'Erreur', true)
     });
   }
@@ -312,7 +315,7 @@ export class AuditLogsComponent implements OnInit {
       next: () => {
         this.deleting.set(false);
         this.showConfirmAll.set(false);
-        this.showMsg('Tous les logs ont ete supprimes');
+        this.showMsg('Tous les journaux ont été supprimés');
         this.load();
       },
       error: (e) => {

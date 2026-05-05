@@ -18,7 +18,7 @@ import { LogoComponent } from '../../shared/components/logo/logo.component';
             <a href="#about" class="outfit">À propos</a>
             <a href="#security" class="outfit">Sécurité</a>
             <a routerLink="/login" class="btn-nav outfit">
-              <span>ACCÈS CLIENT</span>
+              <span>SE CONNECTER</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
             </a>
           </div>
@@ -84,13 +84,13 @@ import { LogoComponent } from '../../shared/components/logo/logo.component';
       </section>
 
       <!-- Trust Bar -->
-      <div class="trust-bar border-top-glow">
+      <div class="trust-bar border-top-glow" id="about">
         <div class="container flex-between">
           <span class="trust-label outfit">PARTENAIRE DE CONFIANCE :</span>
           <div class="trust-logos">
             <span class="trust-item outfit">🛡️ SÉCURITÉ ISO 27001</span>
             <span class="trust-item outfit">🏦 BANQUE CENTRALE DE TUNISIE</span>
-            <span class="trust-item outfit">🔐 CHIFFREMENT MILITAIRE</span>
+            <span class="trust-item outfit">🔐 PROTECTION DES DONNÉES</span>
           </div>
         </div>
       </div>
@@ -105,7 +105,7 @@ import { LogoComponent } from '../../shared/components/logo/logo.component';
 
           <div class="features-matrix">
             @for (f of features; track f.key) {
-              <div class="feature-tile animate-in">
+              <div class="feature-tile animate-in" (click)="onFeatureClick(f.title)">
                 <div class="tile-icon-box">
                   @switch (f.key) {
                     @case ('transfer') { <span class="icon">💸</span> }
@@ -140,7 +140,7 @@ import { LogoComponent } from '../../shared/components/logo/logo.component';
                   <div class="point-icon">✓</div>
                   <div class="point-content">
                     <h4 class="outfit">Authentification Multi-Facteurs</h4>
-                    <p class="outfit">Chaque transaction est protégée par un protocole 2FA rigoureux.</p>
+                    <p class="outfit">Chaque transaction est protégée par une validation renforcée.</p>
                   </div>
                 </div>
                 <div class="point-item">
@@ -312,11 +312,14 @@ import { LogoComponent } from '../../shared/components/logo/logo.component';
 })
 export class LandingComponent {
   features = [
-    { key: 'transfer',  title: 'Virements instantanés',  desc: 'Envoyez de l\'argent en quelques secondes avec vérification OTP. Simple, groupé ou permanent.' },
-    { key: 'card',      title: 'Gestion de cartes',      desc: 'Liez, activez et gérez vos cartes bancaires directement depuis votre espace client.' },
-    { key: 'credit',    title: 'Simulation de crédit',   desc: 'Calculez vos mensualités et soumettez votre demande de crédit en ligne.' },
-    { key: 'bot',       title: 'Assistant intelligent',  desc: 'Notre chatbot IA répond à vos questions et vous guide dans toutes vos opérations.' },
-    { key: 'repeat',    title: 'Virements permanents',   desc: 'Programmez des virements récurrents qui s\'exécutent automatiquement.' },
-    { key: 'dashboard', title: 'Tableau de bord',        desc: 'Visualisez vos comptes, transactions et cartes en un coup d\'oeil.' },
+    { key: 'transfer', title: 'Virements instantanés', desc: 'Envoyez de l\'argent en quelques secondes avec vérification OTP. Simple, groupé ou permanent.' },
+    { key: 'card', title: 'Gestion de cartes', desc: 'Liez, activez et gérez vos cartes bancaires directement depuis votre espace client.' },
+    { key: 'credit', title: 'Simulation de crédit', desc: 'Calculez vos mensualités et soumettez votre demande de crédit en ligne.' },
+    { key: 'bot', title: 'Assistant intelligent', desc: 'Notre chatbot IA répond à vos questions et vous guide dans toutes vos opérations.' },
+    { key: 'repeat', title: 'Virements permanents', desc: 'Programmez des virements récurrents qui s\'exécutent automatiquement.' },
+    { key: 'dashboard', title: 'Tableau de bord', desc: 'Visualisez vos comptes, transactions et cartes en un coup d\'oeil.' },
   ];
+  onFeatureClick(title: string) {
+    console.log('Feature clicked:', title);
+  }
 }

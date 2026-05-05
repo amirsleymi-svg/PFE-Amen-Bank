@@ -11,6 +11,7 @@ public record NotificationRealtimeEvent(
         String title,
         String message,
         Notification.NotificationType type,
+        String role, // ADDED
         LocalDateTime createdAt
 ) {
 }

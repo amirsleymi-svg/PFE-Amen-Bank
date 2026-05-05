@@ -1,18 +1,21 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { ADMIN_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { DashboardStats, Transaction, CreditRequest, AuditLog } from '../../../core/models/api.models';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { auditActionFr, entityTypeFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [SidebarComponent, RouterLink, DecimalPipe, DatePipe],
+  imports: [SidebarComponent, NavbarComponent, RouterLink, DecimalPipe, DatePipe],
   template: `
     <div class="layout">
       <app-sidebar [items]="navItems" />
       <main class="main-content">
+        <app-navbar />
         <div class="page-header">
           <h1 class="outfit">Administration Système</h1>
           <p>Supervision globale et monitoring en temps réel des flux bancaires.</p>
@@ -51,7 +54,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
         </div>
 
         <!-- Activity feed (3 columns) -->
-        <h3 class="section-title outfit mt-3">Monitoring en direct</h3>
+        <h3 class="section-title outfit mt-3">Suivi en direct</h3>
         <div class="activity-grid">
           <!-- Transfers -->
           <div class="activity-card premium-surface">
@@ -117,11 +120,11 @@ import { DecimalPipe, DatePipe } from '@angular/common';
               @for (l of recentLogs(); track l.id) {
                 <div class="activity-item">
                   <div class="activity-main">
-                    <span class="badge" [class]="'badge-' + auditCat(l.action)">{{ l.action }}</span>
+                    <span class="badge" [class]="'badge-' + auditCat(l.action)">{{ auditActionFr(l.action) }}</span>
                   </div>
                   <div class="activity-meta">
                     <span class="activity-name">{{ l.userName }}</span>
-                    <span class="badge-sub">{{ l.entityType }}</span>
+                    <span class="badge-sub">{{ entityTypeFr(l.entityType) }}</span>
                   </div>
                   <div class="activity-date">{{ l.createdAt | date:'dd/MM HH:mm' }}</div>
                 </div>
@@ -177,7 +180,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
     .activity-link { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-decoration: none; text-transform: uppercase; }
     
     .activity-body { max-height: 420px; overflow-y: auto; }
-    .activity-item { padding: 1rem 1.25rem; border-bottom: 1px solid var(--gray-50); transition: all 0.2s; }
+    .activity-item { padding: 1rem 1.25rem; border-bottom: 1px solid var(--gray-50); transition: all 0.05s; }
     .activity-item:hover { background: var(--gray-50); }
 
     .activity-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; }
@@ -198,7 +201,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
     .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
     .quick-item { 
       text-decoration: none; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; 
-      background: white; border: 1px solid var(--gray-100); border-radius: var(--radius); transition: all 0.2s;
+      background: white; border: 1px solid var(--gray-100); border-radius: var(--radius); transition: all 0.05s;
     }
     .quick-item:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
     .quick-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
@@ -215,6 +218,8 @@ export class AdminDashboardComponent implements OnInit {
   recentCredits = signal<CreditRequest[]>([]);
   recentLogs = signal<AuditLog[]>([]);
   navItems = ADMIN_NAV;
+  auditActionFr = auditActionFr;
+  entityTypeFr = entityTypeFr;
 
   constructor(private api: ApiService) {}
 

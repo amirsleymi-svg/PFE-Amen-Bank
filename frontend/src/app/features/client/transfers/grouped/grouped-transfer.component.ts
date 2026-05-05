@@ -140,7 +140,7 @@ interface Beneficiary { beneficiaryName: string; beneficiaryIban: string; amount
       padding: 0.75rem 1rem;
       border-radius: var(--radius);
       font-size: 0.9rem;
-      transition: all 0.2s;
+      transition: all 0.05s;
     }
     .premium-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.1); outline: none; }
     .iban-font { font-family: monospace; letter-spacing: 0.05em; }
@@ -153,7 +153,7 @@ interface Beneficiary { beneficiaryName: string; beneficiaryIban: string; amount
       color: var(--gray-400);
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: all 0.2s;
+      transition: all 0.05s;
     }
     .btn-remove:hover { background: var(--danger-light); color: var(--danger); }
 
@@ -236,7 +236,7 @@ export class GroupedTransferComponent implements OnInit {
       const rows = this.parseCsv(text);
       this.applyImport(rows, 'PDF');
     } catch (e: any) {
-      this.error.set('PDF invalide : ' + (e?.message || 'impossible d\'extraire les donnees'));
+      this.error.set('PDF invalide : ' + (e?.message || 'impossible d\'extraire les données'));
       this.importMsg.set('');
     }
     input.value = '';
@@ -289,7 +289,7 @@ export class GroupedTransferComponent implements OnInit {
         amount,
       });
     }
-    if (!beneficiaries.length) throw new Error('aucune ligne valide trouvee');
+    if (!beneficiaries.length) throw new Error('aucune ligne valide trouvée');
     return beneficiaries;
   }
 
@@ -299,18 +299,18 @@ export class GroupedTransferComponent implements OnInit {
       && !this.beneficiaries[0].beneficiaryIban
       && !this.beneficiaries[0].amount;
     this.beneficiaries = empty ? rows : [...this.beneficiaries, ...rows];
-    this.importMsg.set(`${rows.length} beneficiaire(s) importe(s) depuis le ${source}.`);
+    this.importMsg.set(`${rows.length} bénéficiaire(s) importé(s) depuis le ${source}.`);
     this.error.set('');
     setTimeout(() => this.importMsg.set(''), 4000);
   }
 
   onSubmit() {
-    if (!this.beneficiaries.length) { this.error.set('Ajoutez au moins un beneficiaire'); return; }
+    if (!this.beneficiaries.length) { this.error.set('Ajoutez au moins un bénéficiaire'); return; }
     this.loading.set(true); this.error.set(''); this.success.set('');
     this.api.groupedTransfer({ sourceAccountId: this.sourceAccountId, beneficiaries: this.beneficiaries }).subscribe({
       next: () => {
         this.loading.set(false);
-        this.success.set('Virement groupe initie avec succes.');
+        this.success.set('Virement groupé initié avec succès.');
         this.beneficiaries = [{ beneficiaryName: '', beneficiaryIban: '', amount: null }];
       },
       error: (e) => { this.loading.set(false); this.error.set(e.error?.message || 'Erreur'); }

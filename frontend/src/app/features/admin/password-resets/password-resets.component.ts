@@ -14,8 +14,8 @@ import { PasswordResetRequest, PasswordResetStats } from '../../../core/models/a
       <app-sidebar [items]="navItems" />
       <main class="main-content">
         <div class="page-header">
-          <h1>Suivi des reinitialisations de mot de passe</h1>
-          <p class="subtitle">Monitoring des demandes libre-service et des resets termines par les utilisateurs.</p>
+          <h1>Suivi des réinitialisations de mot de passe</h1>
+          <p class="subtitle">Suivi des demandes libre-service et des réinitialisations terminées par les utilisateurs.</p>
         </div>
 
         @if (msg()) { <div class="alert" [class.alert-success]="!isError()" [class.alert-error]="isError()">{{ msg() }}</div> }
@@ -31,21 +31,21 @@ import { PasswordResetRequest, PasswordResetStats } from '../../../core/models/a
             <span class="kpi-value">{{ stats()?.pending ?? 0 }}</span>
           </div>
           <div class="kpi kpi-approved">
-            <span class="kpi-label">Lien envoye</span>
+            <span class="kpi-label">Lien envoyé</span>
             <span class="kpi-value">{{ stats()?.approved ?? 0 }}</span>
             <span class="kpi-hint">attente de l'utilisateur</span>
           </div>
           <div class="kpi kpi-completed">
-            <span class="kpi-label">Termines</span>
+            <span class="kpi-label">Terminées</span>
             <span class="kpi-value">{{ stats()?.completed ?? 0 }}</span>
-            <span class="kpi-hint">mot de passe change</span>
+            <span class="kpi-hint">mot de passe changé</span>
           </div>
           <div class="kpi kpi-rejected">
-            <span class="kpi-label">Rejetes</span>
+            <span class="kpi-label">Rejetées</span>
             <span class="kpi-value">{{ stats()?.rejected ?? 0 }}</span>
           </div>
           <div class="kpi kpi-24h">
-            <span class="kpi-label">Dernieres 24h</span>
+            <span class="kpi-label">Dernières 24h</span>
             <span class="kpi-value">{{ stats()?.last24h ?? 0 }}</span>
           </div>
         </div>
@@ -55,16 +55,16 @@ import { PasswordResetRequest, PasswordResetStats } from '../../../core/models/a
           <div class="card-head">
             <div>
               <h3 style="margin:0;">Historique complet</h3>
-              <p class="muted">Chaque ligne represente une demande. Le statut evolue automatiquement quand l'utilisateur termine la reinitialisation.</p>
+              <p class="muted">Chaque ligne représente une demande. Le statut évolue automatiquement quand l'utilisateur termine la réinitialisation.</p>
             </div>
             <div class="filters">
               <label>Statut
                 <select [(ngModel)]="filter" (ngModelChange)="load()">
                   <option value="ALL">Tous</option>
                   <option value="PENDING">En attente</option>
-                  <option value="APPROVED">Lien envoye</option>
-                  <option value="COMPLETED">Termines</option>
-                  <option value="REJECTED">Rejetes</option>
+                  <option value="APPROVED">Lien envoyé</option>
+                  <option value="COMPLETED">Terminées</option>
+                  <option value="REJECTED">Rejetées</option>
                 </select>
               </label>
               <button class="btn btn-secondary" (click)="refresh()">Actualiser</button>
@@ -76,12 +76,12 @@ import { PasswordResetRequest, PasswordResetStats } from '../../../core/models/a
               <thead>
                 <tr>
                   <th>Utilisateur</th>
-                  <th>Email</th>
+                  <th>Adresse e-mail</th>
                   <th>Source</th>
                   <th>Statut</th>
                   <th>Demande</th>
-                  <th>Lien envoye</th>
-                  <th>Termine</th>
+                  <th>Lien envoyé</th>
+                  <th>Terminé</th>
                   <th>Commentaire</th>
                   <th>Actions</th>
                 </tr>
@@ -93,7 +93,7 @@ import { PasswordResetRequest, PasswordResetStats } from '../../../core/models/a
                     <td>{{ r.userEmail }}</td>
                     <td>
                       <span class="source-chip" [class.src-self]="r.source === 'SELF_SERVICE'" [class.src-admin]="r.source === 'ADMIN'">
-                        {{ r.source === 'SELF_SERVICE' ? 'Libre-service' : 'Admin' }}
+                        {{ r.source === 'SELF_SERVICE' ? 'Libre-service' : 'Administrateur' }}
                       </span>
                     </td>
                     <td>
@@ -211,9 +211,9 @@ export class AdminPasswordResetsComponent implements OnInit {
   statusLabel(s: string): string {
     switch (s) {
       case 'PENDING': return 'En attente';
-      case 'APPROVED': return 'Lien envoye';
-      case 'COMPLETED': return 'Termine';
-      case 'REJECTED': return 'Rejete';
+      case 'APPROVED': return 'Lien envoyé';
+      case 'COMPLETED': return 'Terminé';
+      case 'REJECTED': return 'Rejeté';
       default: return s;
     }
   }
@@ -225,25 +225,25 @@ export class AdminPasswordResetsComponent implements OnInit {
 
   approve(id: number) {
     this.api.approvePasswordReset(id).subscribe({
-      next: () => { this.showMsg('Demande approuvee, lien envoye.'); this.refresh(); },
+      next: () => { this.showMsg('Demande approuvée, lien envoyé.'); this.refresh(); },
       error: e => this.showMsg(e?.error?.message || 'Erreur lors de l\'approbation.', true)
     });
   }
 
   reject(id: number) {
     this.api.rejectPasswordReset(id).subscribe({
-      next: () => { this.showMsg('Demande rejetee.'); this.refresh(); },
+      next: () => { this.showMsg('Demande rejetée.'); this.refresh(); },
       error: e => this.showMsg(e?.error?.message || 'Erreur lors du rejet.', true)
     });
   }
 
   remove(r: PasswordResetRequest) {
-    if (!confirm(`Supprimer definitivement cette demande de reinitialisation pour ${r.userEmail} ?`)) return;
+    if (!confirm(`Supprimer définitivement cette demande de réinitialisation pour ${r.userEmail} ?`)) return;
     this.deleting.set(r.id);
     this.api.deletePasswordResetRequest(r.id).subscribe({
       next: () => {
         this.deleting.set(null);
-        this.showMsg('Demande supprimee de l\'historique.');
+        this.showMsg('Demande supprimée de l\'historique.');
         this.refresh();
       },
       error: e => {

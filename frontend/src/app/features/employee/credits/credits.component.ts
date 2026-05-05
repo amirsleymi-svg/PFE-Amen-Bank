@@ -105,6 +105,6 @@ export class EmployeeCreditsComponent implements OnInit {
   constructor(private api: ApiService) {}
   ngOnInit() { this.load(); }
   load() { this.api.getPendingCreditsEmployee().subscribe({ next: r => { if (r.data?.content) this.credits.set(r.data.content); }, error: () => {} }); }
-  approve(id: number) { this.api.approveCreditEmployee(id).subscribe({ next: () => { this.msg.set('Credit approuve'); this.load(); }, error: () => this.msg.set('Erreur') }); }
-  reject(id: number) { this.api.rejectCreditEmployee(id, 'Refuse').subscribe({ next: () => { this.msg.set('Credit rejete'); this.load(); }, error: () => this.msg.set('Erreur') }); }
+  approve(id: number) { this.api.approveCreditEmployee(id).subscribe({ next: () => { this.msg.set('Crédit approuvé'); this.load(); }, error: () => this.msg.set('Erreur') }); }
+  reject(id: number) { this.api.rejectCreditEmployee(id, 'Refusé').subscribe({ next: () => { this.msg.set('Crédit rejeté'); this.load(); }, error: () => this.msg.set('Erreur') }); }
 }

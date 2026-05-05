@@ -60,6 +60,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
         @Param("types") java.util.List<Transaction.TransactionType> types
     );
 
+    @Query("SELECT COUNT(t) FROM Transaction t WHERE t.status = :status AND t.type IN :types AND t.amount >= :minAmount")
+    long countByStatusAndTypeInAndAmountGreaterThanEqual(
+        @Param("status") Transaction.TransactionStatus status,
+        @Param("types") java.util.List<Transaction.TransactionType> types,
+        @Param("minAmount") java.math.BigDecimal minAmount
+    );
+
     @Query("SELECT t FROM Transaction t WHERE t.type IN :types AND t.createdAt BETWEEN :from AND :to ORDER BY t.createdAt ASC")
     java.util.List<Transaction> findByTypeInAndCreatedAtBetween(
         @Param("types") java.util.List<Transaction.TransactionType> types,

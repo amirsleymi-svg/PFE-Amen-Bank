@@ -9,6 +9,7 @@ import com.amenbank.notification.EmailService;
 import com.amenbank.notification.NotificationService;
 import com.amenbank.repository.*;
 import com.amenbank.security.TokenHasher;
+import com.amenbank.notification.NotificationWebSocketHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,7 @@ public class RegistrationService {
     private final EmailService emailService;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final TokenHasher tokenHasher;
 
     @Value("${app.initial-balance:100.000}")
@@ -53,6 +55,7 @@ public class RegistrationService {
                 .phone(dto.getPhone())
                 .build();
         registrationRequestRepository.save(request);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     public Page<RegistrationRequestResponse> getPendingRequests(Pageable pageable) {
@@ -78,6 +81,7 @@ public class RegistrationService {
         request.setDecisionComment(comment);
         request.setReviewedAt(LocalDateTime.now());
         registrationRequestRepository.save(request);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
 
         // Create user account
         Role clientRole = roleRepository.findByName("CLIENT")
@@ -136,6 +140,9 @@ public class RegistrationService {
         request.setDecisionComment(comment);
         request.setReviewedAt(LocalDateTime.now());
         registrationRequestRepository.save(request);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
+
+        emailService.sendRejectionEmail(request.getEmail());
 
         auditService.log(admin, "REJECT_REGISTRATION", "RegistrationRequest", id,
                 "Rejected registration for " + request.getEmail());

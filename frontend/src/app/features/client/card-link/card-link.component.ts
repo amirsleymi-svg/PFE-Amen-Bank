@@ -18,7 +18,7 @@ import { DecimalPipe } from '@angular/common';
         @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
         <div class="card" style="max-width:450px;">
           <p style="color:#666;font-size:0.9rem;margin-bottom:1rem;">
-            Selectionnez un compte actif pour generer une carte bancaire.
+            Sélectionnez un compte actif pour générer une carte bancaire.
           </p>
           <form (ngSubmit)="onSubmit()">
             <div class="form-group">
@@ -31,7 +31,7 @@ import { DecimalPipe } from '@angular/common';
               </select>
             </div>
             <button type="submit" class="btn btn-primary btn-block" [disabled]="loading() || !selectedAccountId">
-              {{ loading() ? 'Creation...' : 'Demander la carte' }}
+              {{ loading() ? 'Création...' : 'Demander la carte' }}
             </button>
           </form>
         </div>
@@ -70,13 +70,13 @@ export class CardLinkComponent implements OnInit {
         this.loading.set(false);
         const c = r.data;
         this.success.set(c
-          ? `Carte creee avec succes : ${c.cardNumberMasked} (expire ${c.expiryDate})`
-          : 'Carte creee avec succes.');
+          ? `Carte créée avec succès : ${c.cardNumberMasked} (expire ${c.expiryDate})`
+          : 'Carte créée avec succès.');
         this.selectedAccountId = null;
       },
       error: (e) => {
         this.loading.set(false);
-        this.error.set(e.error?.message || 'Erreur lors de la creation de la carte');
+        this.error.set(e.error?.message || 'Erreur lors de la création de la carte');
       }
     });
   }

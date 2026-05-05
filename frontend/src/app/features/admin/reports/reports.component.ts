@@ -5,6 +5,7 @@ import { ADMIN_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { DailyReport } from '../../../core/models/api.models';
 import { DatePipe } from '@angular/common';
+import { statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-admin-reports',
@@ -15,7 +16,7 @@ import { DatePipe } from '@angular/common';
       <main class="main-content">
         <div class="page-header">
           <h1 class="outfit">Supervision des Rapports</h1>
-          <p class="subtitle outfit">Validation et notation des synthÃ¨ses opÃ©rationnelles journaliÃ¨res.</p>
+          <p class="subtitle outfit">Validation et notation des synthèses opérationnelles journalières.</p>
         </div>
 
         @if (msg()) { <div class="alert animate-in" [class.alert-success]="!isError()" [class.alert-error]="isError()">{{ msg() }}</div> }
@@ -30,17 +31,17 @@ import { DatePipe } from '@angular/common';
           <div class="stat-card warning-surface">
             <span class="stat-label outfit">En attente d'examen</span>
             <div class="stat-value outfit text-warning">{{ submittedCount() }}</div>
-            <div class="stat-footer outfit">Ã€ valider</div>
+            <div class="stat-footer outfit">À valider</div>
           </div>
           <div class="stat-card success-surface">
-            <span class="stat-label outfit">SynthÃ¨ses ValidÃ©es</span>
+            <span class="stat-label outfit">Synthèses validées</span>
             <div class="stat-value outfit text-success">{{ reviewedCount() }}</div>
-            <div class="stat-footer outfit">Examens terminÃ©s</div>
+            <div class="stat-footer outfit">Examens terminés</div>
           </div>
           <div class="stat-card accent-gradient">
             <span class="stat-label outfit">Soumis Aujourd'hui</span>
             <div class="stat-value outfit">{{ todayCount() }}</div>
-            <div class="stat-footer outfit">Flux rÃ©cents</div>
+            <div class="stat-footer outfit">Flux récents</div>
           </div>
         </div>
 
@@ -49,8 +50,8 @@ import { DatePipe } from '@angular/common';
             <table class="premium-table">
               <thead>
                 <tr>
-                  <th class="outfit">Ã‰metteur</th>
-                  <th class="outfit">RÃ©fÃ©rence</th>
+                  <th class="outfit">Émetteur</th>
+                  <th class="outfit">Référence</th>
                   <th class="outfit">Statut</th>
                   <th class="outfit">Score</th>
                   <th class="outfit">Superviseur</th>
@@ -74,18 +75,18 @@ import { DatePipe } from '@angular/common';
                       </div>
                     </td>
                     <td>
-                      <span class="status-pill" [class]="'st-' + r.status.toLowerCase()">{{ r.status }}</span>
+                      <span class="status-pill" [class]="'st-' + r.status.toLowerCase()">{{ statusFr(r.status) }}</span>
                     </td>
                     <td>
                       @if (r.rating) { 
                         <div class="rating-display">
                           @for (star of [1,2,3,4,5]; track star) {
-                            <span class="star" [class.filled]="r.rating >= star">â˜…</span>
+                            <span class="star" [class.filled]="r.rating >= star">★</span>
                           }
                         </div>
-                      } @else { <span class="color-gray-400 size-xs">Non notÃ©</span> }
+                      } @else { <span class="color-gray-400 size-xs">Non noté</span> }
                     </td>
-                    <td class="color-gray-600 size-sm">{{ r.reviewedByName || 'â€”' }}</td>
+                    <td class="color-gray-600 size-sm">{{ r.reviewedByName || '—' }}</td>
                     <td class="color-gray-400 size-xs">{{ r.createdAt | date:'dd/MM HH:mm' }}</td>
                     <td>
                       <div class="flex gap-1 justify-end">
@@ -93,7 +94,7 @@ import { DatePipe } from '@angular/common';
                         @if (r.status !== 'REVIEWED') {
                           <button class="btn btn-accent btn-sm outfit font-bold" (click)="openReview(r)">EXAMINER</button>
                         }
-                        <button class="btn btn-ghost btn-danger-text btn-sm" (click)="confirmDelete.set(r)">âœ•</button>
+                        <button class="btn btn-ghost btn-danger-text btn-sm" (click)="confirmDelete.set(r)">✕</button>
                       </div>
                     </td>
                   </tr>
@@ -101,7 +102,7 @@ import { DatePipe } from '@angular/common';
                   <tr>
                     <td colspan="7">
                       <div class="empty-state">
-                        <div class="empty-icon">ðŸ“Š</div>
+                        <div class="empty-icon">📊</div>
                         <p class="outfit">Aucun rapport disponible pour examen.</p>
                       </div>
                     </td>
@@ -120,11 +121,11 @@ import { DatePipe } from '@angular/common';
                 <div>
                   <h2 class="outfit color-white mb-0-5">{{ s.title }}</h2>
                   <div class="flex gap-1 align-center">
-                    <span class="badge-status outfit" [class]="'st-' + s.status.toLowerCase()">{{ s.status }}</span>
+                    <span class="badge-status outfit" [class]="'st-' + s.status.toLowerCase()">{{ statusFr(s.status) }}</span>
                     <span class="color-gray-400 size-xs outfit">Soumis par {{ s.employeeName }} le {{ s.reportDate | date:'dd/MM/yyyy' }}</span>
                   </div>
                 </div>
-                <button class="btn-close-premium" (click)="selected.set(null)">âœ•</button>
+                <button class="btn-close-premium" (click)="selected.set(null)">✕</button>
               </div>
 
               <div class="dialog-grid mt-2">
@@ -137,17 +138,17 @@ import { DatePipe } from '@angular/common';
                   @if (s.reviewComment) {
                     <div class="review-feedback-box mb-2">
                       <div class="flex-between align-center mb-1">
-                        <span class="outfit size-xs uppercase font-bold color-success">Examen FinalisÃ©</span>
+                        <span class="outfit size-xs uppercase font-bold color-success">Examen finalisé</span>
                         @if (s.rating) { 
-                          <div class="rating-compact">â­ {{ s.rating }}/5</div>
+                          <div class="rating-compact">⭐ {{ s.rating }}/5</div>
                         }
                       </div>
                       <p class="review-text outfit">{{ s.reviewComment }}</p>
-                      <div class="reviewer-tag outfit mt-1">SupervisÃ© par: {{ s.reviewedByName }}</div>
+                      <div class="reviewer-tag outfit mt-1">Supervisé par : {{ s.reviewedByName }}</div>
                     </div>
                   } @else {
                     <div class="pending-notice outfit">
-                      âš ï¸ Ce rapport est en attente d'examen administratif.
+                      ⚠️ Ce rapport est en attente d'examen administratif.
                     </div>
                   }
                 </div>
@@ -161,21 +162,21 @@ import { DatePipe } from '@angular/common';
           <div class="overlay animate-in" (click)="reviewing.set(null)">
             <div class="dialog glass-style-dark" (click)="$event.stopPropagation()">
               <h3 class="outfit color-white mb-1">Examen Qualitatif</h3>
-              <p class="color-gray-400 size-sm mb-2">Validation de la synthÃ¨se soumise par {{ r.employeeName }}</p>
+              <p class="color-gray-400 size-sm mb-2">Validation de la synthèse soumise par {{ r.employeeName }}</p>
               
               <div class="form-group mb-2">
                 <label class="outfit size-xs uppercase color-gray-400">Commentaire de supervision</label>
-                <textarea [(ngModel)]="reviewForm.comment" rows="4" class="premium-textarea" placeholder="RÃ©digez votre retour dÃ©taillÃ© ici..."></textarea>
+                <textarea [(ngModel)]="reviewForm.comment" rows="4" class="premium-textarea" placeholder="Rédigez votre retour détaillé ici..."></textarea>
               </div>
 
               <div class="form-group mb-3">
-                <label class="outfit size-xs uppercase color-gray-400">Ã‰valuation de la performance (1-5)</label>
+                <label class="outfit size-xs uppercase color-gray-400">Évaluation de la performance (1-5)</label>
                 <div class="rating-selector mt-1">
                   @for (n of [1,2,3,4,5]; track n) {
                     <button type="button" 
                       class="star-button" 
                       [class.active]="(reviewForm.rating || 0) >= n" 
-                      (click)="reviewForm.rating = n">â˜…</button>
+                      (click)="reviewForm.rating = n">★</button>
                   }
                 </div>
               </div>
@@ -194,9 +195,9 @@ import { DatePipe } from '@angular/common';
         @if (confirmDelete(); as r) {
           <div class="overlay animate-in" (click)="confirmDelete.set(null)">
             <div class="dialog glass-style-dark text-center" (click)="$event.stopPropagation()">
-              <div class="danger-icon mb-1">ðŸ—‘ï¸</div>
+              <div class="danger-icon mb-1">🗑️</div>
               <h3 class="outfit color-white">Supprimer le rapport ?</h3>
-              <p class="color-gray-400 mb-2">Vous Ãªtes sur le point de supprimer dÃ©finitivement la synthÃ¨se du <strong>{{ r.reportDate | date:'dd/MM/yyyy' }}</strong>.</p>
+              <p class="color-gray-400 mb-2">Vous êtes sur le point de supprimer définitivement la synthèse du <strong>{{ r.reportDate | date:'dd/MM/yyyy' }}</strong>.</p>
               <div class="flex gap-1">
                 <button class="btn btn-ghost flex-1" (click)="confirmDelete.set(null)">RETOUR</button>
                 <button class="btn btn-danger flex-1" (click)="doDelete()" [disabled]="deleting()">
@@ -242,7 +243,7 @@ import { DatePipe } from '@angular/common';
     .premium-textarea:focus { border-color: var(--accent); }
 
     .rating-selector { display: flex; gap: 0.5rem; }
-    .star-button { background: none; border: none; font-size: 1.5rem; color: rgba(255,255,255,0.1); cursor: pointer; transition: transform 0.2s, color 0.2s; }
+    .star-button { background: none; border: none; font-size: 1.5rem; color: rgba(255,255,255,0.1); cursor: pointer; transition: transform 0.05s, color 0.2s; }
     .star-button.active { color: #fbbf24; }
     .star-button:hover { transform: scale(1.2); }
 
@@ -263,6 +264,7 @@ export class AdminReportsComponent implements OnInit {
   msg = signal('');
   isError = signal(false);
   navItems = ADMIN_NAV;
+  statusFr = statusFr;
 
   submittedCount = computed(() => this.reports().filter(r => r.status === 'SUBMITTED').length);
   reviewedCount = computed(() => this.reports().filter(r => r.status === 'REVIEWED').length);
@@ -300,7 +302,7 @@ export class AdminReportsComponent implements OnInit {
       next: () => {
         this.submitting.set(false);
         this.reviewing.set(null);
-        this.flash('Rapport examinÃ© avec succÃ¨s');
+        this.flash('Rapport examiné avec succès');
         this.load();
       },
       error: (e) => {
@@ -318,7 +320,7 @@ export class AdminReportsComponent implements OnInit {
       next: () => {
         this.deleting.set(false);
         this.confirmDelete.set(null);
-        this.flash('Rapport supprimÃ©');
+        this.flash('Rapport supprimé');
         this.load();
       },
       error: (e) => {

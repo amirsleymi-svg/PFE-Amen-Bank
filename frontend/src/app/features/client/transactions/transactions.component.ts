@@ -4,6 +4,7 @@ import { CLIENT_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { Transaction } from '../../../core/models/api.models';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { statusFr, transactionTypeFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-transactions',
@@ -40,7 +41,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
                         <span class="type-icon">
                           @if (t.type.includes('TRANSFER')) { 📤 } @else { 💳 }
                         </span>
-                        <span class="type-label outfit">{{ t.type }}</span>
+                        <span class="type-label outfit">{{ transactionTypeFr(t.type) }}</span>
                       </div>
                     </td>
                     <td>
@@ -50,7 +51,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
                     </td>
                     <td>
                       <span class="status-indicator-pill" [class]="'st-' + t.status.toLowerCase()">
-                        {{ t.status }}
+                        {{ statusFr(t.status) }}
                       </span>
                     </td>
                     <td>
@@ -110,6 +111,8 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 export class TransactionsComponent implements OnInit {
   transactions = signal<Transaction[]>([]);
   navItems = CLIENT_NAV;
+  statusFr = statusFr;
+  transactionTypeFr = transactionTypeFr;
   constructor(private api: ApiService) {}
   ngOnInit() { this.api.getClientTransfers().subscribe({ next: r => { if (r.data?.content) this.transactions.set(r.data.content); }, error: () => {} }); }
 }

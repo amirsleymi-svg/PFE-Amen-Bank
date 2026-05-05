@@ -1,19 +1,22 @@
 import { Component, signal, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { NavbarComponent } from '../../../shared/components/navbar/navbar.component';
 import { CLIENT_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { BankAccount, AccountCard } from '../../../core/models/api.models';
 import { DecimalPipe } from '@angular/common';
+import { statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-client-dashboard',
-  imports: [SidebarComponent, RouterLink, DecimalPipe],
+  imports: [SidebarComponent, NavbarComponent, RouterLink, DecimalPipe],
   template: `
     <div class="layout">
       <app-sidebar [items]="navItems" />
       <main class="main-content">
+        <app-navbar />
         <div class="page-header">
           <h1 class="outfit">Tableau de bord</h1>
           <p>Bienvenue dans votre espace premium, {{ auth.user()?.firstName }}</p>
@@ -29,7 +32,7 @@ import { DecimalPipe } from '@angular/common';
               <div class="stat-value outfit">{{ account.balance | number:'1.3-3' }} <span class="currency">TND</span></div>
               <div class="muted-meta">IBAN: {{ account.iban }}</div>
               <div class="card-footer-meta">
-                <span class="badge status-badge" [class.badge-success]="account.status==='ACTIVE'" [class.badge-danger]="account.status!=='ACTIVE'">{{ account.status }}</span>
+                <span class="badge status-badge" [class.badge-success]="account.status==='ACTIVE'" [class.badge-danger]="account.status!=='ACTIVE'">{{ statusFr(account.status) }}</span>
                 <span class="accent-dot"></span>
               </div>
             </div>
@@ -43,11 +46,11 @@ import { DecimalPipe } from '@angular/common';
           <div class="stats-grid cards-grid">
             @for (card of cards(); track card.id) {
               <div class="stat-card card-item glass-style">
-                <div class="stat-label">CARD NUMBER</div>
+                <div class="stat-label">NUMÉRO DE CARTE</div>
                 <div class="stat-value card-balance outfit">{{ card.cardNumberMasked }}</div>
                 <div class="flex-between mt-2">
                   <div class="card-balance-sub outfit">{{ card.balance | number:'1.3-3' }} TND</div>
-                  <span class="badge status-badge" [class.badge-success]="card.status==='ACTIVE'" [class.badge-warning]="card.status==='DISABLED'" [class.badge-danger]="card.status==='EXPIRED'">{{ card.status }}</span>
+                  <span class="badge status-badge" [class.badge-success]="card.status==='ACTIVE'" [class.badge-warning]="card.status==='DISABLED'" [class.badge-danger]="card.status==='EXPIRED'">{{ statusFr(card.status) }}</span>
                 </div>
               </div>
             }
@@ -151,7 +154,7 @@ import { DecimalPipe } from '@angular/common';
       background: white;
       border: 1px solid var(--gray-50);
       border-radius: var(--radius);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.05s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .quick-item:hover {
@@ -169,6 +172,7 @@ export class ClientDashboardComponent implements OnInit {
   accounts = signal<BankAccount[]>([]);
   cards = signal<AccountCard[]>([]);
   navItems = CLIENT_NAV;
+  statusFr = statusFr;
 
   constructor(private api: ApiService, public auth: AuthService) {}
 

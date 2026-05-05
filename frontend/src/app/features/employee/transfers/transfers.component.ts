@@ -5,6 +5,7 @@ import { EMPLOYEE_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { Transaction } from '../../../core/models/api.models';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { transactionTypeFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-employee-transfers',
@@ -37,7 +38,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
                 @for (t of transfers(); track t.id) {
                   <tr class="animate-in">
                     <td><code class="ref-code outfit">{{ t.reference }}</code></td>
-                    <td><span class="badge-type" [class]="'type-' + t.type.toLowerCase()">{{ t.type }}</span></td>
+                    <td><span class="badge-type" [class]="'type-' + t.type.toLowerCase()">{{ transactionTypeFr(t.type) }}</span></td>
                     <td class="amount outfit">{{ t.amount | number:'1.3-3' }} <small>TND</small></td>
                     <td>
                       <div class="client-info">
@@ -105,9 +106,10 @@ export class EmployeeTransfersComponent implements OnInit {
   transfers = signal<Transaction[]>([]);
   msg = signal('');
   navItems = EMPLOYEE_NAV;
+  transactionTypeFr = transactionTypeFr;
   constructor(private api: ApiService) {}
   ngOnInit() { this.load(); }
   load() { this.api.getPendingTransfersEmployee().subscribe({ next: r => { if (r.data?.content) this.transfers.set(r.data.content); }, error: () => {} }); }
-  approve(id: number) { this.api.approveTransferEmployee(id).subscribe({ next: () => { this.msg.set('Virement approuve'); this.load(); }, error: () => this.msg.set('Erreur') }); }
-  reject(id: number) { this.api.rejectTransferEmployee(id, 'Refuse par employe').subscribe({ next: () => { this.msg.set('Virement rejete'); this.load(); }, error: () => this.msg.set('Erreur') }); }
+  approve(id: number) { this.api.approveTransferEmployee(id).subscribe({ next: () => { this.msg.set('Virement approuvé'); this.load(); }, error: () => this.msg.set('Erreur') }); }
+  reject(id: number) { this.api.rejectTransferEmployee(id, 'Refusé par employé').subscribe({ next: () => { this.msg.set('Virement rejeté'); this.load(); }, error: () => this.msg.set('Erreur') }); }
 }

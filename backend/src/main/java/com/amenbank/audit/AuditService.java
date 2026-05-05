@@ -14,6 +14,16 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
+    private final com.amenbank.notification.NotificationWebSocketHandler notificationWebSocketHandler;
+
+    private static final java.util.List<String> SECURITY_ACTIONS = java.util.List.of(
+            "LOGIN_FAILED",
+            "LOGIN_BLOCKED_LOCKED",
+            "LOGIN_BLOCKED_DISABLED",
+            "ACCOUNT_LOCKED",
+            "UNAUTHORIZED_ACCESS",
+            "BLOCK_SUSPICIOUS_USER"
+    );
 
     public void log(User user, String action, String entityType, Long entityId, String details) {
         String ip = null;
@@ -40,6 +50,10 @@ public class AuditService {
                 .build();
 
         auditLogRepository.save(log);
+
+        if (SECURITY_ACTIONS.contains(action) || "APPROVE_REGISTRATION".equals(action) || "TRANSFER_CREATED".equals(action) || "CREDIT_REQUEST_CREATED".equals(action)) {
+            notificationWebSocketHandler.broadcastBadgeRefresh();
+        }
     }
 
     public void log(User user, String action, String details) {

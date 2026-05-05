@@ -171,10 +171,10 @@ export class SimpleTransferComponent implements OnInit {
         this.loading.set(false);
         this.step.set('otp');
         this.otpCode = '';
-        this.success.set('Code OTP envoye par email.');
+        this.success.set('Code de sécurité envoyé par e-mail.');
         setTimeout(() => this.success.set(''), 3000);
       },
-      error: (e) => { this.loading.set(false); this.error.set(e.error?.message || 'Impossible d\'envoyer le code OTP'); }
+      error: (e) => { this.loading.set(false); this.error.set(e.error?.message || 'Impossible d\'envoyer le code de sécurité'); }
     });
   }
 
@@ -187,7 +187,7 @@ export class SimpleTransferComponent implements OnInit {
     this.api.simpleTransfer({ ...this.form, otpCode: this.otpCode }).subscribe({
       next: () => {
         this.loading.set(false);
-        this.success.set('Virement initie avec succes. En attente d\'approbation.');
+        this.success.set('Virement initié avec succès. En attente d\'approbation.');
         this.step.set('form');
         this.form.destinationIban = ''; this.form.amount = null; this.form.description = '';
         this.otpCode = '';

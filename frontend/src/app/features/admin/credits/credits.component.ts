@@ -5,6 +5,7 @@ import { ADMIN_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { CreditRequest } from '../../../core/models/api.models';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { statusFr } from '../../../shared/display-labels';
 
 @Component({
   selector: 'app-admin-credits',
@@ -21,9 +22,9 @@ import { DecimalPipe, DatePipe } from '@angular/common';
           <select [(ngModel)]="filterStatus" (ngModelChange)="load()" class="filter-select">
             <option value="">Tous les statuts</option>
             <option value="PENDING">En attente</option>
-            <option value="APPROVED">Approuves</option>
-            <option value="DISBURSED">Debourses</option>
-            <option value="REJECTED">Rejetes</option>
+            <option value="APPROVED">Approuvés</option>
+            <option value="DISBURSED">Déboursés</option>
+            <option value="REJECTED">Rejetés</option>
           </select>
         </div>
 
@@ -72,7 +73,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
                     [class.badge-warning]="c.status==='PENDING'"
                     [class.badge-success]="c.status==='APPROVED'||c.status==='DISBURSED'"
                     [class.badge-danger]="c.status==='REJECTED'">
-                    {{ c.status }}
+                    {{ statusFr(c.status) }}
                   </span>
                 </td>
                 <td>{{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -131,6 +132,7 @@ export class AdminCreditsComponent implements OnInit {
   credits = signal<CreditRequest[]>([]);
   filterStatus = '';
   navItems = ADMIN_NAV;
+  statusFr = statusFr;
 
   pendingCount = computed(() => this.credits().filter(c => c.status === 'PENDING').length);
   approvedCount = computed(() => this.credits().filter(c => c.status === 'APPROVED' || c.status === 'DISBURSED').length);

@@ -12,6 +12,7 @@ import com.amenbank.entity.Transaction;
 import com.amenbank.entity.User;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.NotificationService;
+import com.amenbank.notification.NotificationWebSocketHandler;
 import com.amenbank.repository.AuditLogRepository;
 import com.amenbank.repository.BankAccountRepository;
 import com.amenbank.repository.CreditRequestRepository;
@@ -43,6 +44,7 @@ public class EmployeeService {
     private final CreditRequestRepository creditRequestRepository;
     private final AuditLogRepository auditLogRepository;
     private final NotificationService notificationService;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final AuditService auditService;
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
@@ -61,6 +63,7 @@ public class EmployeeService {
         auditService.log(employee, "CREATE_DAILY_REPORT", "DailyReport", report.getId(),
                 "Daily report for " + request.getReportDate());
         notifyAdminsNewReport(report);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
 
         return mapToResponse(report);
     }
@@ -105,6 +108,7 @@ public class EmployeeService {
                         " (" + transfers.size() + " transferts, " + newCredits.size() + " nouveaux credits, " +
                         decidedCredits.size() + " credits traites, " + balanceIncreases.size() + " credits solde)");
         notifyAdminsNewReport(report);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
 
         return mapToResponse(report);
     }
@@ -301,6 +305,7 @@ public class EmployeeService {
 
         auditService.log(employee, "INCREASE_BALANCE", "BankAccount", accountId,
                 "Increased balance by " + amount + " TND for account " + account.getAccountNumber());
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     private DailyReportResponse mapToResponse(DailyReport r) {

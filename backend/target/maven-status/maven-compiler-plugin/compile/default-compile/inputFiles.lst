@@ -5,6 +5,7 @@ C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\config\Secu
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\config\WebSocketConfig.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\controller\AdminController.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\controller\AuthController.java
+C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\controller\BadgeController.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\controller\ClientController.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\controller\EmployeeController.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\controller\NotificationController.java
@@ -30,6 +31,7 @@ C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\request
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\response\ApiResponse.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\response\AuditLogResponse.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\response\AuthResponse.java
+C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\response\BadgeResponse.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\response\BankAccountResponse.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\response\BlockedIpResponse.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\dto\response\CardResponse.java
@@ -73,6 +75,7 @@ C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\entity\User
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\exception\BusinessException.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\exception\GlobalExceptionHandler.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\exception\ResourceNotFoundException.java
+C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\notification\BadgeRefreshEvent.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\notification\EmailService.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\notification\NotificationRealtimeEvent.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\notification\NotificationService.java
@@ -111,6 +114,7 @@ C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\security\Us
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\service\AccountService.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\service\AdminService.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\service\AuthService.java
+C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\service\BadgeService.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\service\CardService.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\service\CreditService.java
 C:\xampp\htdocs\project\Amen Bank\backend\src\main\java\com\amenbank\service\EmployeeService.java

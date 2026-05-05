@@ -13,7 +13,7 @@ from schemas import (
     ConversationResponse,
     MessageResponse,
 )
-from services import client_context, ollama_service
+from services import client_context, faq_matcher, ollama_service
 
 logger = logging.getLogger(__name__)
 
@@ -118,8 +118,10 @@ async def send_message(
     await db.commit()
     await db.refresh(user_msg)
 
-    # 3. Build the Ollama prompt: system prompt with the client's real banking data
-    # + recent conversation history for multi-turn coherence.
+    # 3. Build context from real client data.
+    client_data: dict = {}
+    rag_context = ""
+    system_prompt = ""
     try:
         client_data = await client_context.gather_client_context(db, client_id)
         rag_context = client_context.build_rag_context(client_data, user_message)
@@ -128,22 +130,36 @@ async def send_message(
         logger.warning("Could not gather client context: %s", e)
         system_prompt = client_context.build_system_prompt({})
 
-    history_result = await db.execute(
-        select(ChatMessage)
-        .where(ChatMessage.conversation_id == conversation_id)
-        .order_by(ChatMessage.created_at.desc())
-        .limit(settings.MAX_HISTORY_MESSAGES)
-    )
-    history_msgs = list(reversed(history_result.scalars().all()))
+    # 4. Try deterministic answer first for high-quality answers on frequent intents.
+    assistant_content = faq_matcher.try_answer(user_message, client_data)
+    if assistant_content is None:
+        # 5. Fallback to Ollama for open questions.
+        history_result = await db.execute(
+            select(ChatMessage)
+            .where(ChatMessage.conversation_id == conversation_id)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(settings.MAX_HISTORY_MESSAGES)
+        )
+        history_msgs = list(reversed(history_result.scalars().all()))
 
-    ollama_messages = [{"role": "system", "content": system_prompt}]
-    for m in history_msgs:
-        ollama_messages.append({"role": m.role, "content": m.content})
+        ollama_messages = [{"role": "system", "content": system_prompt}]
+        for m in history_msgs:
+            ollama_messages.append({"role": m.role, "content": m.content})
 
-    # 4. Call Ollama
-    assistant_content = await ollama_service.generate(ollama_messages)
+        # >>> RAG AMEN BANK — START
+        try:
+            from rag.rag_db_query import get_db_context
+            from rag.rag_prompt_builder import build_prompt
+            _db_context = await get_db_context(user_message, client_id)
+            final_prompt = build_prompt(user_message, _db_context)
+        except Exception:
+            final_prompt = user_message  # silent fallback
+        # >>> RAG AMEN BANK — END
+        ollama_messages[-1]["content"] = final_prompt # Pass final_prompt to Ollama instead of user_message
 
-    # 5. Verify conversation still exists (client may have deleted it mid-flight)
+        assistant_content = await ollama_service.generate(ollama_messages)
+
+    # 6. Verify conversation still exists (client may have deleted it mid-flight)
     still_exists = await db.execute(
         select(ChatConversation.id).where(
             ChatConversation.id == conversation_id,
@@ -161,7 +177,7 @@ async def send_message(
             ),
         )
 
-    # 6. Save assistant response
+    # 7. Save assistant response
     assistant_msg = ChatMessage(
         conversation_id=conversation_id,
         role="assistant",

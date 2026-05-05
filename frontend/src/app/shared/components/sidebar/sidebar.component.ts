@@ -1,7 +1,8 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, signal, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { LogoComponent } from '../logo/logo.component';
+import { NotificationWebsocketService } from '../../../core/services/notification-websocket.service';
 
 export interface NavItem {
   label: string;
@@ -11,6 +12,7 @@ export interface NavItem {
 
 @Component({
   selector: 'app-sidebar',
+  standalone: true,
   imports: [RouterLink, RouterLinkActive, LogoComponent],
   template: `
     <button type="button" class="mobile-toggle" (click)="toggle()" [attr.aria-expanded]="open()" aria-label="Menu">
@@ -34,11 +36,16 @@ export interface NavItem {
           </div>
         </div>
       </div>
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" #scrollContainer (scroll)="onScroll($event)">
         @for (item of items(); track item.route) {
-          <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" (click)="close()">
+          <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item" (click)="close()">
             <span class="nav-icon">{{ item.icon }}</span>
             <span class="nav-label">{{ item.label }}</span>
+            @if (getBadgeCount(item)) {
+              <span class="badge sidebar-badge" [class.red-glow]="isUrgent(item)">
+                {{ getBadgeCount(item) > 99 ? '99+' : getBadgeCount(item) }}
+              </span>
+            }
           </a>
         }
       </nav>
@@ -112,18 +119,90 @@ export interface NavItem {
       .mobile-toggle { display:flex; }
       .sidebar-backdrop { display:block; }
     }
+
+    .sidebar-badge {
+      margin-left: auto;
+      background: var(--gray-700);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 10px;
+      min-width: 24px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .red-glow {
+      background: #ff4d4f;
+      box-shadow: 0 0 10px rgba(255, 77, 79, 0.5);
+      animation: badge-pulse 2s infinite;
+    }
+    @keyframes badge-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); box-shadow: 0 0 15px rgba(255, 77, 79, 0.8); }
+      100% { transform: scale(1); }
+    }
   `]
 })
-export class SidebarComponent {
+export class SidebarComponent implements AfterViewInit {
   items = input<NavItem[]>([]);
   open = signal(false);
 
-  constructor(public auth: AuthService, private router: Router) {
+  static scrollPosition = 0;
+  @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLElement>;
+
+  ngAfterViewInit() {
+    if (this.scrollContainer?.nativeElement) {
+      setTimeout(() => {
+        this.scrollContainer.nativeElement.scrollTop = SidebarComponent.scrollPosition;
+      }, 0);
+    }
+  }
+
+  onScroll(event: Event) {
+    SidebarComponent.scrollPosition = (event.target as HTMLElement).scrollTop;
+  }
+
+  sidebarBadgeCounts = signal<{ [key: string]: number }>({}); // ADDED
+  
+  constructor(
+    public auth: AuthService,
+    private router: Router,
+    private wsService: NotificationWebsocketService
+  ) {
     this.router.events.subscribe(e => { if (e instanceof NavigationEnd) this.open.set(false); });
+    
+    // Bind to BehaviorSubject - ADDED
+    this.wsService.badgeCounts$.subscribe(counts => this.sidebarBadgeCounts.set(counts));
   }
 
   toggle() { this.open.update(v => !v); }
   close() { this.open.set(false); }
+
+  getBadgeCount(item: NavItem): number {
+    const label = item.label.toLowerCase();
+    
+    // Client-specific: Notifications badge
+    if (label.includes('notification')) {
+      return this.wsService.unreadCount();
+    }
+
+    const counts = this.sidebarBadgeCounts(); // IMPROVED
+    if (label.includes('inscription')) return counts['inscriptions'] || 0;
+    if (label.includes('virement')) return counts['virements'] || 0;
+    if (label.includes('crédit')) return counts['credits'] || 0;
+    if (label.includes('rapport')) return counts['rapports'] || 0;
+    if (label.includes('fraude')) return counts['fraudAlerts'] || 0;
+    if (label.includes('connexion')) return counts['suspiciousConnections'] || 0;
+    if (label.includes('audit')) return counts['auditLogs'] || 0;
+
+    return 0;
+  }
+
+  isUrgent(item: NavItem): boolean {
+    const label = item.label.toLowerCase();
+    return label.includes('fraude') || label.includes('connexion') || label.includes('inscription');
+  }
 
   initials(): string {
     const u = this.auth.user();
@@ -134,7 +213,7 @@ export class SidebarComponent {
   roleLabel(): string {
     switch (this.auth.user()?.role) {
       case 'CLIENT': return 'Client';
-      case 'EMPLOYEE': return 'Employe';
+      case 'EMPLOYEE': return 'Employé';
       case 'ADMIN': return 'Administrateur';
       default: return '';
     }

@@ -11,6 +11,7 @@ import com.amenbank.entity.CreditSimulation;
 import com.amenbank.entity.User;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.NotificationService;
+import com.amenbank.notification.NotificationWebSocketHandler;
 import com.amenbank.repository.BankAccountRepository;
 import com.amenbank.repository.CreditRequestRepository;
 import com.amenbank.repository.CreditSimulationRepository;
@@ -40,6 +41,7 @@ public class CreditService {
     private final BankAccountRepository bankAccountRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
 
     private static final BigDecimal DEFAULT_INTEREST_RATE = new BigDecimal("7.50");
 
@@ -83,6 +85,7 @@ public class CreditService {
                 " mois (ref: CR-" + String.format("%06d", request.getId()) + ") est en attente d'approbation. " +
                 "Vous serez notifie des qu'un employe aura traite votre dossier.");
 
+        notificationWebSocketHandler.broadcastBadgeRefresh();
         return mapToResponse(request);
     }
 
@@ -152,6 +155,7 @@ public class CreditService {
                 "  - Date : " + request.getReviewedAt().toLocalDate() + "\n" +
                 "  - Compte credite : " + targetAccount.getAccountNumber();
         notificationService.sendSuccess(client, "Credit approuve et verse", notifMsg);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     @Transactional
@@ -177,6 +181,7 @@ public class CreditService {
                 "  - Motif du refus : " + (comment != null && !comment.isBlank() ? comment : "Non precise") + "\n\n" +
                 "Veuillez contacter votre agence pour plus d'informations.";
         notificationService.sendError(request.getClient(), "Credit refuse", rejectMsg);
+        notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
     private CreditSimulationResponse calculateCredit(BigDecimal amount, int months, BigDecimal annualRate) {

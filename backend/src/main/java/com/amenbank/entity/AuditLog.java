@@ -35,6 +35,10 @@ public class AuditLog {
     @Column(name = "user_agent", length = 500)
     private String userAgent;
 
+    @Column(name = "is_read", nullable = false)
+    @Builder.Default
+    private Boolean isRead = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

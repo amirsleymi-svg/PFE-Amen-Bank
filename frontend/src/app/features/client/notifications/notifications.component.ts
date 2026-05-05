@@ -4,6 +4,8 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 import { CLIENT_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { notificationTypeFr } from '../../../shared/display-labels';
+import { NotificationWebsocketService } from '../../../core/services/notification-websocket.service';
 
 interface Notif {
   id: number;
@@ -28,7 +30,7 @@ type ReadFilter = 'all' | 'unread';
 const CATEGORIES: { key: Category; label: string; icon: string }[] = [
   { key: 'all',      label: 'Toutes',      icon: '🔔' },
   { key: 'virement', label: 'Virements',   icon: '💸' },
-  { key: 'credit',   label: 'Credits',     icon: '💰' },
+  { key: 'credit',   label: 'Crédits',     icon: '💰' },
   { key: 'compte',   label: 'Compte',      icon: '🏦' },
   { key: 'solde',    label: 'Solde',       icon: '💵' },
   { key: 'autre',    label: 'Autres',      icon: '📋' },
@@ -49,6 +51,9 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
           <div class="header-actions">
             <button class="btn btn-ghost outfit" (click)="refresh()" [disabled]="loading()">
               Actualiser
+            </button>
+            <button class="btn btn-ghost outfit color-danger" (click)="deleteAll()" [disabled]="items().length === 0 || marking()">
+              Tout supprimer
             </button>
             <button class="btn btn-primary outfit" (click)="markAllRead()" [disabled]="unreadCount() === 0 || marking()">
               Tout marquer lu
@@ -114,12 +119,19 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
                     </div>
                     <p class="outfit">{{ n.message }}</p>
                     <div class="notif-footer">
-                      <span class="type-tag outfit">{{ n.type }}</span>
-                      @if (!n.isRead) {
-                        <button class="btn-mark-single outfit" (click)="markRead(n)" [disabled]="marking()">
-                          Marquer comme lu
-                        </button>
-                      }
+                      <div class="flex align-center gap-0-5">
+                        <span class="type-tag outfit">{{ notificationTypeFr(n.type) }}</span>
+                        @if (!n.isRead) {
+                          <span class="unread-dot"></span>
+                        }
+                      </div>
+                      <div class="notif-actions">
+                        <button class="btn-action outfit view" (click)="viewDetails(n)">Voir</button>
+                        @if (!n.isRead) {
+                          <button class="btn-action outfit read" (click)="markRead(n)" [disabled]="marking()">Lu</button>
+                        }
+                        <button class="btn-action outfit delete" (click)="deleteNotif(n)" [disabled]="marking()">Supprimer</button>
+                      </div>
                     </div>
                   </div>
                 </li>
@@ -137,7 +149,7 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
     .category-tabs::-webkit-scrollbar { height: 4px; }
     .category-tabs::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 4px; }
 
-    .cat-chip { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; background: white; border: 1px solid var(--gray-100); border-radius: 10px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .cat-chip { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; background: white; border: 1px solid var(--gray-100); border-radius: 10px; cursor: pointer; transition: all 0.05s; white-space: nowrap; }
     .cat-chip .count { background: var(--gray-50); color: var(--gray-400); padding: 0.1rem 0.5rem; border-radius: 20px; font-size: 0.7rem; font-weight: 800; }
     .cat-chip:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--primary-light); }
     .cat-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
@@ -153,7 +165,7 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
     .premium-spinner { width: 30px; height: 30px; border: 3px solid var(--gray-100); border-top-color: var(--accent); border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
 
     .notif-list { list-style: none; padding: 0; margin: 0; }
-    .notif-item { display: flex; gap: 1.25rem; padding: 1.5rem 2rem; border-bottom: 1px solid var(--gray-50); position: relative; transition: all 0.2s; }
+    .notif-item { display: flex; gap: 1.25rem; padding: 1.5rem 2rem; border-bottom: 1px solid var(--gray-50); position: relative; transition: all 0.05s; }
     .notif-item:hover { background: var(--gray-50); }
     .notif-item.unread { background: rgba(0, 61, 110, 0.02); }
     .notif-item.unread .notif-indicator { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent); }
@@ -168,8 +180,17 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
     .notif-footer { display: flex; justify-content: space-between; align-items: center; }
     .type-tag { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-400); background: var(--gray-50); padding: 0.25rem 0.5rem; border-radius: 4px; }
     
-    .btn-mark-single { background: none; border: none; color: var(--accent); font-size: 0.75rem; font-weight: 800; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s; }
-    .btn-mark-single:hover { background: var(--accent-light); }
+    .unread-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 5px var(--accent); }
+    
+    .notif-actions { display: flex; gap: 0.5rem; }
+    .btn-action { background: none; border: 1px solid var(--gray-100); color: var(--gray-600); font-size: 0.7rem; font-weight: 700; cursor: pointer; padding: 0.3rem 0.6rem; border-radius: 6px; transition: all 0.2s; }
+    .btn-action:hover { background: var(--gray-50); border-color: var(--gray-300); }
+    .btn-action.view { color: var(--primary); }
+    .btn-action.read { color: var(--success); }
+    .btn-action.delete { color: var(--danger); }
+    .btn-action.delete:hover { background: rgba(239, 68, 68, 0.05); border-color: var(--danger-light); }
+
+    .color-danger { color: var(--danger) !important; }
 
     .type-success .notif-icon-box { color: var(--success); border-color: var(--success-light); }
     .type-warning .notif-icon-box { color: var(--warning); border-color: var(--warning-light); }
@@ -182,6 +203,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
 
   navItems = CLIENT_NAV;
   categories = CATEGORIES;
+  notificationTypeFr = notificationTypeFr;
   items = signal<Notif[]>([]);
   category = signal<Category>('all');
   readFilter = signal<ReadFilter>('all');
@@ -223,7 +245,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
     return this.items().filter(n => this.categorize(n) === cat).length;
   }
 
-  constructor(private api: ApiService, private auth: AuthService) {}
+  constructor(private api: ApiService, private auth: AuthService, private wsService: NotificationWebsocketService) {}
 
   ngOnInit() {
     this.refresh();
@@ -259,6 +281,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
       next: () => {
         this.marking.set(false);
         this.items.update(list => list.map(x => x.id === n.id ? { ...x, isRead: true } : x));
+        this.wsService.unreadCount.update(c => Math.max(0, c - 1));
       },
       error: () => { this.marking.set(false); }
     });
@@ -271,13 +294,61 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
       next: () => {
         this.marking.set(false);
         this.items.update(list => list.map(x => ({ ...x, isRead: true })));
-        this.showMsg('Toutes les notifications ont ete marquees comme lues.');
+        this.wsService.unreadCount.set(0);
+        this.showMsg('Toutes les notifications ont été marquées comme lues.');
       },
       error: () => {
         this.marking.set(false);
-        this.showMsg('Erreur lors de la mise a jour.', true);
+        this.showMsg('Erreur lors de la mise à jour.', true);
       }
     });
+  }
+
+  deleteNotif(n: Notif) {
+    if (this.marking()) return;
+    this.marking.set(true);
+    this.api.deleteNotification(n.id).subscribe({
+      next: () => {
+        this.marking.set(false);
+        const wasUnread = !n.isRead;
+        this.items.update(list => list.filter(x => x.id !== n.id));
+        if (wasUnread) {
+          this.wsService.unreadCount.update(c => Math.max(0, c - 1));
+        }
+        this.showMsg('Notification supprimée.');
+      },
+      error: () => {
+        this.marking.set(false);
+        this.showMsg('Erreur lors de la suppression.', true);
+      }
+    });
+  }
+
+  deleteAll() {
+    if (this.items().length === 0 || this.marking()) return;
+    if (!confirm('Voulez-vous vraiment supprimer toutes vos notifications ?')) return;
+    this.marking.set(true);
+    this.api.deleteAllNotifications().subscribe({
+      next: () => {
+        this.marking.set(false);
+        this.items.set([]);
+        this.wsService.unreadCount.set(0);
+        this.showMsg('Toutes les notifications ont été supprimées.');
+      },
+      error: () => {
+        this.marking.set(false);
+        this.showMsg('Erreur lors de la suppression totale.', true);
+      }
+    });
+  }
+
+  viewDetails(n: Notif) {
+    // Simply mark as read if it wasn't, and show a message or redirect if applicable
+    if (!n.isRead) {
+      this.markRead(n);
+    }
+    // For now, we stay on the same page but could redirect to account, credit etc.
+    this.showMsg(`Détails: ${n.title}`);
   }
 
   typeClass(type: string): string {
@@ -310,7 +381,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
           isRead: false,
           createdAt: payload.createdAt || new Date().toISOString()
         }, ...list]);
-        alert("Je recois l'evenement et j'affiche une alerte a client");
+        this.showMsg("Nouvelle notification reçue");
       } catch {
         // Ignore malformed realtime payloads and keep page functional.
       }
