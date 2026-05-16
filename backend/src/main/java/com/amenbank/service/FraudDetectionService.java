@@ -1,5 +1,6 @@
 package com.amenbank.service;
 
+import com.amenbank.audit.AuditService;
 import com.amenbank.dto.response.FraudAlertResponse;
 import com.amenbank.entity.FraudAlert;
 import com.amenbank.entity.Notification;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -34,6 +36,12 @@ public class FraudDetectionService {
     private final NotificationWebSocketHandler notificationWebSocketHandler;
     private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
+    private final AuditService auditService;
+
+    private static final List<FraudAlert.AlertStatus> ACTIVE_ALERT_STATUSES = List.of(
+            FraudAlert.AlertStatus.OPEN,
+            FraudAlert.AlertStatus.INVESTIGATING
+    );
 
     @Value("${app.fraud.threshold:10000}")
     private BigDecimal fraudThreshold;
@@ -45,6 +53,16 @@ public class FraudDetectionService {
     private int velocityMaxCount;
 
     public void analyzeTransaction(Transaction transaction) {
+        if (transaction == null || transaction.getAmount() == null) {
+            return;
+        }
+        checkHighAmount(transaction);
+        checkVelocity(transaction);
+        checkDailyVolume(transaction);
+        checkUnusualExternalDestination(transaction);
+    }
+
+    private void checkHighAmount(Transaction transaction) {
         BigDecimal amount = transaction.getAmount();
 
         if (amount.compareTo(fraudThreshold) > 0) {
@@ -57,25 +75,13 @@ public class FraudDetectionService {
                 severity = FraudAlert.Severity.MEDIUM;
             }
 
-            FraudAlert alert = FraudAlert.builder()
-                    .transaction(transaction)
-                    .alertType(FraudAlert.AlertType.HIGH_AMOUNT)
-                    .description("Transaction " + transaction.getReference() + " de " + amount +
-                            " TND depasse le seuil de " + fraudThreshold + " TND")
-                    .severity(severity)
-                    .build();
-            fraudAlertRepository.save(alert);
-
-            log.warn("FRAUD ALERT: High amount transaction {} - {} TND (severity: {})",
-                    transaction.getReference(), amount, severity);
-
-            notifyAdmins("Alerte fraude - Montant eleve",
+            raiseAlert(transaction, FraudAlert.AlertType.HIGH_AMOUNT, severity,
+                    "Transaction " + transaction.getReference() + " de " + amount +
+                            " TND depasse le seuil de " + fraudThreshold + " TND",
+                    "Alerte fraude - Montant eleve",
                     "Transaction " + transaction.getReference() + " de " + amount +
                             " TND detectee. Severite: " + severity.name());
-            notificationWebSocketHandler.broadcastBadgeRefresh();
         }
-
-        checkVelocity(transaction);
     }
 
     private void checkVelocity(Transaction transaction) {
@@ -94,23 +100,101 @@ public class FraudDetectionService {
                 ? FraudAlert.Severity.HIGH
                 : FraudAlert.Severity.MEDIUM;
 
+        raiseAlert(transaction, FraudAlert.AlertType.VELOCITY, severity,
+                "Compte " + transaction.getSourceAccount().getAccountNumber() +
+                        " : " + recentCount + " transactions en " + velocityWindowMinutes +
+                        " minutes (seuil: " + velocityMaxCount + ")",
+                "Alerte fraude - Velocite",
+                recentCount + " transactions detectees en " + velocityWindowMinutes +
+                        " minutes sur le compte " + transaction.getSourceAccount().getAccountNumber() +
+                        ". Severite: " + severity.name());
+    }
+
+    private void checkDailyVolume(Transaction transaction) {
+        if (transaction.getSourceAccount() == null) {
+            return;
+        }
+
+        LocalDateTime since = LocalDateTime.now().minusHours(24);
+        List<Transaction> recent = transactionRepository.findRecentBySourceAccountSince(
+                transaction.getSourceAccount().getId(), since);
+        BigDecimal total = recent.stream()
+                .map(Transaction::getAmount)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal mediumThreshold = fraudThreshold.multiply(BigDecimal.valueOf(3));
+        if (total.compareTo(mediumThreshold) < 0) {
+            return;
+        }
+
+        FraudAlert.Severity severity = total.compareTo(fraudThreshold.multiply(BigDecimal.valueOf(6))) >= 0
+                ? FraudAlert.Severity.CRITICAL
+                : FraudAlert.Severity.HIGH;
+
+        raiseAlert(transaction, FraudAlert.AlertType.SUSPICIOUS_PATTERN, severity,
+                "Volume cumule de " + total + " TND sur 24h pour le compte " +
+                        transaction.getSourceAccount().getAccountNumber() + " (seuil: " + mediumThreshold + " TND)",
+                "Alerte fraude - Volume journalier",
+                "Le compte " + transaction.getSourceAccount().getAccountNumber() +
+                        " cumule " + total + " TND sur 24h. Severite: " + severity.name());
+    }
+
+    private void checkUnusualExternalDestination(Transaction transaction) {
+        String iban = transaction.getDestinationExternalIban();
+        if (iban == null || iban.isBlank() || transaction.getInitiatedBy() == null || transaction.getId() == null) {
+            return;
+        }
+
+        BigDecimal unusualThreshold = fraudThreshold.divide(BigDecimal.valueOf(2), 3, RoundingMode.HALF_UP);
+        if (transaction.getAmount().compareTo(unusualThreshold) < 0) {
+            return;
+        }
+
+        long previousUse = transactionRepository.countPreviousExternalDestinationUsage(
+                transaction.getInitiatedBy().getId(), iban, transaction.getId());
+        if (previousUse > 0) {
+            return;
+        }
+
+        FraudAlert.Severity severity = transaction.getAmount().compareTo(fraudThreshold) >= 0
+                ? FraudAlert.Severity.HIGH
+                : FraudAlert.Severity.MEDIUM;
+
+        raiseAlert(transaction, FraudAlert.AlertType.UNUSUAL_DESTINATION, severity,
+                "Premier virement externe vers " + iban + " avec un montant de " +
+                        transaction.getAmount() + " TND",
+                "Alerte fraude - Nouveau beneficiaire externe",
+                "Transaction " + transaction.getReference() + " vers un IBAN externe jamais utilise (" +
+                        iban + "). Severite: " + severity.name());
+    }
+
+    private void raiseAlert(Transaction transaction,
+                            FraudAlert.AlertType alertType,
+                            FraudAlert.Severity severity,
+                            String description,
+                            String title,
+                            String message) {
+        if (transaction.getId() != null && fraudAlertRepository.existsByTransactionIdAndAlertTypeAndStatusIn(
+                transaction.getId(), alertType, ACTIVE_ALERT_STATUSES)) {
+            return;
+        }
+
         FraudAlert alert = FraudAlert.builder()
                 .transaction(transaction)
-                .alertType(FraudAlert.AlertType.VELOCITY)
-                .description("Compte " + transaction.getSourceAccount().getAccountNumber() +
-                        " : " + recentCount + " transactions en " + velocityWindowMinutes +
-                        " minutes (seuil: " + velocityMaxCount + ")")
+                .alertType(alertType)
+                .description(description)
                 .severity(severity)
                 .build();
         fraudAlertRepository.save(alert);
 
-        log.warn("FRAUD ALERT: Velocity - account {} had {} transactions in {} minutes (severity: {})",
-                transaction.getSourceAccount().getAccountNumber(), recentCount, velocityWindowMinutes, severity);
+        auditService.log(transaction.getInitiatedBy(), "FRAUD_ALERT_CREATED", "FraudAlert", alert.getId(),
+                description + " (transaction " + transaction.getReference() + ")");
 
-        notifyAdmins("Alerte fraude - Velocite",
-                recentCount + " transactions detectees en " + velocityWindowMinutes +
-                        " minutes sur le compte " + transaction.getSourceAccount().getAccountNumber() +
-                        ". Severite: " + severity.name());
+        log.warn("FRAUD ALERT: {} - transaction {} (severity: {})",
+                alertType, transaction.getReference(), severity);
+
+        notifyAdmins(title, message);
         notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 

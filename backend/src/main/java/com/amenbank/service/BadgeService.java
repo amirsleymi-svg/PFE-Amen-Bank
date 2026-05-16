@@ -48,7 +48,7 @@ public class BadgeService {
             counts.put("rapports", dailyReportRepository.countByStatus(DailyReport.ReportStatus.SUBMITTED));
             counts.put("fraudAlerts", fraudAlertRepository.countByStatus(FraudAlert.AlertStatus.OPEN));
             counts.put("suspiciousConnections", auditLogRepository.countByActionInAndIsReadFalse(SECURITY_ACTIONS));
-            counts.put("auditLogs", auditLogRepository.countByIsReadFalse());
+            counts.put("auditLogs", auditLogRepository.countUnreadImportant());
         } else if ("EMPLOYEE".equals(role)) {
             counts.put("virements", transactionRepository.countByStatusAndTypeInAndAmountGreaterThanEqual(
                     Transaction.TransactionStatus.PENDING, TRANSFER_TYPES, new BigDecimal("1000")));

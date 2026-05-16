@@ -5,6 +5,7 @@ import com.amenbank.dto.request.ResetPasswordRequest;
 import com.amenbank.entity.*;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.EmailService;
+import com.amenbank.notification.NotificationService;
 import com.amenbank.repository.*;
 import com.amenbank.security.TokenHasher;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class PasswordResetService {
     private final ResetTokenRepository resetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final NotificationService notificationService;
     private final AuditService auditService;
     private final TokenHasher tokenHasher;
 
@@ -62,6 +64,9 @@ public class PasswordResetService {
         emailService.sendPasswordResetEmail(user.getEmail(), token);
         auditService.log(user, "PASSWORD_RESET_REQUESTED",
                 "Self-service password reset requested; link emailed");
+        notifyAdmins("Reinitialisation de mot de passe",
+                "Demande de reinitialisation pour " + user.getEmail() +
+                        " en libre-service. Evenement centralise dans les Audit Logs.");
     }
 
     @Transactional
@@ -90,6 +95,8 @@ public class PasswordResetService {
         emailService.sendPasswordResetEmail(request.getUser().getEmail(), token);
         auditService.log(admin, "APPROVE_PASSWORD_RESET", "PasswordResetRequest", id,
                 "Approved password reset for " + request.getUser().getEmail());
+        notifyAdmins("Reinitialisation MDP approuvee",
+                "Demande #" + id + " approuvee pour " + request.getUser().getEmail() + ".");
     }
 
     @Transactional
@@ -109,6 +116,8 @@ public class PasswordResetService {
 
         auditService.log(admin, "REJECT_PASSWORD_RESET", "PasswordResetRequest", id,
                 "Rejected password reset for " + request.getUser().getEmail());
+        notifyAdmins("Reinitialisation MDP rejetee",
+                "Demande #" + id + " rejetee pour " + request.getUser().getEmail() + ".");
     }
 
     @Transactional
@@ -143,6 +152,8 @@ public class PasswordResetService {
                 });
 
         auditService.log(user, "PASSWORD_RESET_COMPLETED", "Password reset completed");
+        notifyAdmins("Mot de passe reinitialise",
+                "Le mot de passe de " + user.getEmail() + " a ete reinitialise avec succes.");
     }
 
     public Page<PasswordResetRequestResponse> getPendingRequests(Pageable pageable) {
@@ -208,5 +219,11 @@ public class PasswordResetService {
                 .createdAt(r.getCreatedAt())
                 .source(source)
                 .build();
+    }
+
+    private void notifyAdmins(String title, String message) {
+        for (User admin : userRepository.findAllByRoleName("ADMIN")) {
+            notificationService.send(admin, title, message, Notification.NotificationType.WARNING);
+        }
     }
 }

@@ -38,6 +38,19 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT COUNT(t) FROM Transaction t WHERE t.sourceAccount.id = :accountId AND t.createdAt >= :since")
     long countBySourceAccountSince(@Param("accountId") Long accountId, @Param("since") LocalDateTime since);
 
+    @Query("SELECT t FROM Transaction t WHERE t.sourceAccount.id = :accountId AND t.createdAt >= :since ORDER BY t.createdAt DESC")
+    java.util.List<Transaction> findRecentBySourceAccountSince(
+        @Param("accountId") Long accountId,
+        @Param("since") LocalDateTime since
+    );
+
+    @Query("SELECT COUNT(t) FROM Transaction t WHERE t.initiatedBy.id = :userId AND t.destinationExternalIban = :iban AND t.id <> :transactionId")
+    long countPreviousExternalDestinationUsage(
+        @Param("userId") Long userId,
+        @Param("iban") String iban,
+        @Param("transactionId") Long transactionId
+    );
+
     @Query("SELECT t FROM Transaction t WHERE t.type IN :types ORDER BY t.createdAt DESC")
     Page<Transaction> findByTypeIn(@Param("types") java.util.List<Transaction.TransactionType> types, Pageable pageable);
 

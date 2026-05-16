@@ -1,38 +1,69 @@
 import { NavItem } from './components/sidebar/sidebar.component';
 
 export const CLIENT_NAV: NavItem[] = [
-  { label: 'Tableau de bord', route: '/client/dashboard', icon: '📊' },
-  { label: 'Mon compte', route: '/client/accounts', icon: '🏦' },
+  { label: 'Accueil', route: '/client/dashboard', icon: '🏠' },
+  { label: 'Compte Bancaire', route: '/client/accounts', icon: '🏦' },
+  { label: 'Ma Carte', route: '/client/cards/manage', icon: '💳' },
+  { label: 'Demander une carte', route: '/client/cards/request', icon: '✨' },
+  {
+    label: 'Virements',
+    icon: '💸',
+    route: '/client/transfers',
+    children: [
+      { label: 'Virement simple', route: '/client/transfers/simple', icon: '📤' },
+      { label: 'Virement groupé', route: '/client/transfers/grouped', icon: '👥' },
+      { label: 'Virement permanent', route: '/client/transfers/permanent', icon: '🔄' },
+    ]
+  },
+  {
+    label: 'Crédits',
+    icon: '💰',
+    route: '/client/credits',
+    children: [
+      { label: 'Demande de crédit', route: '/client/credits/request', icon: '📝' },
+      { label: 'Simuler un crédit', route: '/client/credits/simulate', icon: '🧮' },
+    ]
+  },
   { label: 'Transactions', route: '/client/transactions', icon: '📋' },
-  { label: 'Virement simple', route: '/client/transfers/simple', icon: '💸' },
-  { label: 'Virement groupé', route: '/client/transfers/grouped', icon: '👥' },
-  { label: 'Virement permanent', route: '/client/transfers/permanent', icon: '🔄' },
-  { label: 'Simuler un crédit', route: '/client/credits/simulate', icon: '🧮' },
-  { label: 'Demander un crédit', route: '/client/credits/request', icon: '📝' },
-  { label: 'Mes crédits', route: '/client/credits/list', icon: '💰' },
-  { label: 'Ma carte', route: '/client/cards', icon: '💳' },
-  { label: 'Notifications', route: '/client/notifications', icon: '🔔' },
   { label: 'Assistant', route: '/client/chatbot', icon: '🤖' },
 ];
 
 export const EMPLOYEE_NAV: NavItem[] = [
-  { label: 'Tableau de bord', route: '/employee/dashboard', icon: '📊' },
-  { label: 'Virements', route: '/employee/transfers', icon: '💸' },
-  { label: 'Crédits', route: '/employee/credits', icon: '💰' },
-  { label: 'Augmenter le solde', route: '/employee/balance', icon: '💵' },
+  { label: 'Accueil', route: '/employee/dashboard', icon: '📊' },
+  {
+    label: 'Demandes bancaires',
+    icon: '📂',
+    route: '/employee/demandes-bancaires',
+    children: [
+      { label: 'Virements', route: '/employee/demandes-bancaires/transfers', icon: '💸' },
+      { label: 'Crédits', route: '/employee/demandes-bancaires/credits', icon: '💰' },
+    ]
+  },
+  { label: 'Dépôt à créditer', route: '/employee/balance', icon: '💵' },
   { label: 'Rapports', route: '/employee/reports', icon: '📝' },
 ];
 
 export const ADMIN_NAV: NavItem[] = [
-  { label: 'Tableau de bord', route: '/admin/dashboard', icon: '📊' },
+  { label: 'Accueil', route: '/admin/dashboard', icon: '📊' },
+  {
+    label: 'Superviser le système',
+    icon: '🛠️',
+    route: '/admin/superviser',
+    children: [
+      { label: 'Audit Logs', route: '/admin/superviser/audit-logs', icon: '📜' },
+    ]
+  },
   { label: 'Utilisateurs', route: '/admin/users', icon: '👥' },
-  { label: 'Comptes bancaires', route: '/admin/bank-accounts', icon: '🏦' },
-  { label: 'Inscriptions', route: '/admin/registrations', icon: '📋' },
-  { label: 'Réinitialisations MDP', route: '/admin/password-resets', icon: '🔑' },
-  { label: 'Suivi virements', route: '/admin/transfers', icon: '💸' },
-  { label: 'Suivi crédits', route: '/admin/credits', icon: '💰' },
-  { label: 'Journaux d’audit', route: '/admin/audit-logs', icon: '📜' },
-  { label: 'Rapports', route: '/admin/reports', icon: '📝' },
-  { label: 'Alertes fraude', route: '/admin/fraud-alerts', icon: '🚨' },
-  { label: 'Sécurité', route: '/admin/security', icon: '🛡️' },
+  { label: 'Comptes Bancaires', route: '/admin/bank-accounts', icon: '🏦' },
+  { label: 'Inscriptions', route: '/admin/registrations', icon: '📝' },
+  { label: 'Rapports', route: '/admin/reports', icon: '📄' },
+  {
+    label: 'Sécurité Système',
+    icon: '🛡️',
+    route: '/admin/security-system',
+    children: [
+      { label: 'Alertes Fraude', route: '/admin/security-system/fraud-alerts', icon: '🚨' },
+      { label: 'Sécurité', route: '/admin/security-system/security', icon: '🔒' },
+    ]
+  },
 ];

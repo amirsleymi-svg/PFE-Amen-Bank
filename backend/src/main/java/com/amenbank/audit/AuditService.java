@@ -25,6 +25,20 @@ public class AuditService {
             "BLOCK_SUSPICIOUS_USER"
     );
 
+    private static final java.util.List<String> IMPORTANT_ACTION_KEYWORDS = java.util.List.of(
+            "REGISTRATION",
+            "TRANSFER",
+            "CREDIT",
+            "PASSWORD_RESET",
+            "FRAUD",
+            "INCREASE_BALANCE",
+            "CARD",
+            "SECURITY",
+            "LOCK",
+            "DISABLE",
+            "FREEZE"
+    );
+
     public void log(User user, String action, String entityType, Long entityId, String details) {
         String ip = null;
         String userAgent = null;
@@ -51,9 +65,20 @@ public class AuditService {
 
         auditLogRepository.save(log);
 
-        if (SECURITY_ACTIONS.contains(action) || "APPROVE_REGISTRATION".equals(action) || "TRANSFER_CREATED".equals(action) || "CREDIT_REQUEST_CREATED".equals(action)) {
+        if (shouldRefreshBadges(action)) {
             notificationWebSocketHandler.broadcastBadgeRefresh();
         }
+    }
+
+    private boolean shouldRefreshBadges(String action) {
+        if (action == null) {
+            return false;
+        }
+        if (SECURITY_ACTIONS.contains(action)) {
+            return true;
+        }
+        String upper = action.toUpperCase();
+        return IMPORTANT_ACTION_KEYWORDS.stream().anyMatch(upper::contains);
     }
 
     public void log(User user, String action, String details) {

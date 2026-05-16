@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 @Builder
 public record NotificationRealtimeEvent(
+        Long id,
         Long userId,
         String title,
         String message,

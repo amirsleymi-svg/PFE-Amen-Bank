@@ -16,200 +16,168 @@ import { auditActionFr, entityTypeFr } from '../../../shared/display-labels';
       <app-sidebar [items]="navItems" />
       <main class="main-content">
         <app-navbar />
-        <div class="page-header">
-          <h1 class="outfit">Administration Système</h1>
-          <p>Supervision globale et monitoring en temps réel des flux bancaires.</p>
-        </div>
-
-        <!-- Financial Summary -->
-        <div class="financial-summary mb-3">
-          <div class="stat-card premium-gradient">
-            <div class="flex-between">
-              <div class="stat-label">Volume financier total (Actif)</div>
-              <div class="accent-dot pulse"></div>
-            </div>
-            <div class="stat-value outfit">{{ (stats()?.totalBalance ?? 0) | number:'1.3-3' }} <span class="currency-tag">TND</span></div>
+        <div class="page-header flex-between align-center">
+          <div>
+            <h1 class="outfit">Administration Système</h1>
+            <p class="subtitle outfit">Supervision globale et monitoring en temps réel des flux bancaires.</p>
+          </div>
+          <div class="header-actions">
+            <div class="status-pill outfit"><span class="pulse-dot"></span> SYSTÈME OPÉRATIONNEL</div>
           </div>
         </div>
 
-        <!-- Core Stats Grid -->
-        <div class="dashboard-grid">
-          <section>
-            <h3 class="section-title outfit">Utilisateurs</h3>
-            <div class="stats-grid compact">
-              <div class="stat-card glass-style"><div class="stat-label">Total</div><div class="stat-value outfit">{{ stats()?.totalUsers ?? '-' }}</div></div>
-              <div class="stat-card glass-style"><div class="stat-label">Clients</div><div class="stat-value outfit text-info">{{ stats()?.totalClients ?? '-' }}</div></div>
-              <div class="stat-card glass-style"><div class="stat-label">Employés</div><div class="stat-value outfit">{{ stats()?.totalEmployees ?? '-' }}</div></div>
+        <div class="dashboard-content animate-in">
+          <!-- Main Stats Row -->
+          <div class="stats-grid main-stats mb-3">
+            <div class="stat-card premium-gradient shadow-premium">
+              <div class="stat-info">
+                <div class="stat-label outfit">Volume Financier Global</div>
+                <div class="stat-value outfit">{{ (stats()?.totalBalance ?? 0) | number:'1.3-3' }} <small>TND</small></div>
+              </div>
+              <div class="stat-icon-bg">🏦</div>
             </div>
-          </section>
-
-          <section>
-            <h3 class="section-title outfit">Alertes & Attente</h3>
-            <div class="stats-grid compact">
-              <div class="stat-card glass-style border-warning"><div class="stat-label">Virements</div><div class="stat-value outfit text-warning">{{ stats()?.pendingTransfers ?? '-' }}</div></div>
-              <div class="stat-card glass-style border-warning"><div class="stat-label">Crédits</div><div class="stat-value outfit text-warning">{{ stats()?.pendingCredits ?? '-' }}</div></div>
-              <div class="stat-card glass-style border-danger"><div class="stat-label">Fraude</div><div class="stat-value outfit text-danger">{{ stats()?.openFraudAlerts ?? '-' }}</div></div>
-            </div>
-          </section>
-        </div>
-
-        <!-- Activity feed (3 columns) -->
-        <h3 class="section-title outfit mt-3">Suivi en direct</h3>
-        <div class="activity-grid">
-          <!-- Transfers -->
-          <div class="activity-card premium-surface">
-            <div class="activity-head">
-              <div class="activity-title outfit">Virements récents</div>
-              <a routerLink="/admin/transfers" class="activity-link">Tout voir</a>
-            </div>
-            <div class="activity-body">
-              @for (t of recentTransfers(); track t.id) {
-                <div class="activity-item">
-                  <div class="activity-main">
-                    <span class="activity-amount outfit">{{ t.amount | number:'1.3-3' }} <small>TND</small></span>
-                    @if (isAutoTransfer(t)) {
-                      <span class="badge badge-success">⚡ AUTO</span>
-                    } @else if (t.approvedByName) {
-                      <span class="badge badge-dark">👤 {{ shortName(t.approvedByName) }}</span>
-                    }
-                  </div>
-                  <div class="activity-meta">
-                    <span class="activity-name">{{ t.initiatedByName }}</span>
-                    <span class="status-indicator" [class]="'st-' + t.status.toLowerCase()"></span>
-                  </div>
-                  <div class="activity-date">{{ t.createdAt | date:'dd/MM HH:mm' }}</div>
-                </div>
-              } @empty {
-                <div class="empty-mini">Aucun flux détecté</div>
-              }
+            
+            <div class="stats-sub-grid">
+              <div class="stat-card glass-style">
+                <div class="stat-label outfit">Utilisateurs Totaux</div>
+                <div class="stat-value-sm outfit">{{ stats()?.totalUsers ?? '-' }}</div>
+              </div>
+              <div class="stat-card glass-style">
+                <div class="stat-label outfit">Alertes Fraude</div>
+                <div class="stat-value-sm outfit text-danger">{{ stats()?.openFraudAlerts ?? '-' }}</div>
+              </div>
             </div>
           </div>
 
-          <!-- Credits -->
-          <div class="activity-card premium-surface">
-            <div class="activity-head">
-              <div class="activity-title outfit">Demandes de crédit</div>
-              <a routerLink="/admin/credits" class="activity-link">Tout voir</a>
+          <div class="grid-layout">
+            <!-- Activities Column -->
+            <div class="activity-column">
+              <div class="section-head flex-between">
+                <h3 class="outfit">Journal des Opérations</h3>
+                <a routerLink="/admin/superviser/audit-logs" class="link-sm outfit">Voir l'audit complet</a>
+              </div>
+              
+              <div class="activity-feed-premium shadow-premium">
+                @for (l of recentLogs(); track l.id) {
+                  <div class="audit-item-row">
+                    <div class="audit-icon" [class]="'cat-' + auditCat(l.action)"></div>
+                    <div class="audit-info">
+                      <div class="audit-action outfit">{{ auditActionFr(l.action) }}</div>
+                      <div class="audit-meta outfit">{{ l.userName }} • {{ entityTypeFr(l.entityType) }}</div>
+                    </div>
+                    <div class="audit-time outfit">{{ l.createdAt | date:'HH:mm' }}</div>
+                  </div>
+                } @empty {
+                  <div class="empty-state outfit">Aucune activité récente</div>
+                }
+              </div>
             </div>
-            <div class="activity-body">
-              @for (c of recentCredits(); track c.id) {
-                <div class="activity-item">
-                  <div class="activity-main">
-                    <span class="activity-amount outfit">{{ c.amount | number:'1.3-3' }} <small>TND</small></span>
-                    <span class="badge badge-neutral">{{ c.durationMonths }}m</span>
+
+            <!-- Quick Actions Column -->
+            <div class="actions-column">
+              <div class="section-head">
+                <h3 class="outfit">Actions Prioritaires</h3>
+              </div>
+              
+              <div class="priority-actions-list">
+                <a routerLink="/admin/superviser/transfers" class="priority-card border-warning">
+                  <div class="p-info">
+                    <span class="p-count outfit">{{ stats()?.pendingTransfers ?? 0 }}</span>
+                    <span class="p-label outfit">Virements en attente</span>
                   </div>
-                  <div class="activity-meta">
-                    <span class="activity-name">{{ c.clientName }}</span>
-                    <span class="status-indicator" [class]="'st-' + c.status.toLowerCase()"></span>
+                  <span class="p-arrow">→</span>
+                </a>
+                
+                <a routerLink="/admin/superviser/credits" class="priority-card border-warning">
+                  <div class="p-info">
+                    <span class="p-count outfit">{{ stats()?.pendingCredits ?? 0 }}</span>
+                    <span class="p-label outfit">Crédits à valider</span>
                   </div>
-                  <div class="activity-date">{{ c.createdAt | date:'dd/MM HH:mm' }}</div>
-                </div>
-              } @empty {
-                <div class="empty-mini">Aucune demande</div>
-              }
+                  <span class="p-arrow">→</span>
+                </a>
+
+                <a routerLink="/admin/security-system/fraud-alerts" class="priority-card border-danger">
+                  <div class="p-info">
+                    <span class="p-count outfit">{{ stats()?.openFraudAlerts ?? 0 }}</span>
+                    <span class="p-label outfit">Alertes de sécurité</span>
+                  </div>
+                  <span class="p-arrow">→</span>
+                </a>
+              </div>
+
+              <div class="section-head mt-2">
+                <h3 class="outfit">Ressources</h3>
+              </div>
+              <div class="resources-grid">
+                <a routerLink="/admin/users" class="res-pill">Utilisateurs</a>
+                <a routerLink="/admin/employees" class="res-pill">Employés</a>
+                <a routerLink="/admin/reports" class="res-pill">Rapports PDF</a>
+              </div>
             </div>
           </div>
-
-          <!-- Audit logs -->
-          <div class="activity-card premium-surface">
-            <div class="activity-head">
-              <div class="activity-title outfit">Journal d'audit</div>
-              <a routerLink="/admin/audit-logs" class="activity-link">Tout voir</a>
-            </div>
-            <div class="activity-body">
-              @for (l of recentLogs(); track l.id) {
-                <div class="activity-item">
-                  <div class="activity-main">
-                    <span class="badge" [class]="'badge-' + auditCat(l.action)">{{ auditActionFr(l.action) }}</span>
-                  </div>
-                  <div class="activity-meta">
-                    <span class="activity-name">{{ l.userName }}</span>
-                    <span class="badge-sub">{{ entityTypeFr(l.entityType) }}</span>
-                  </div>
-                  <div class="activity-date">{{ l.createdAt | date:'dd/MM HH:mm' }}</div>
-                </div>
-              } @empty {
-                <div class="empty-mini">Journal vide</div>
-              }
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick links -->
-        <h3 class="section-title outfit">Gestion Rapide</h3>
-        <div class="quick-grid">
-          <a routerLink="/admin/users" class="card quick-item"><div class="quick-icon">👥</div><div class="quick-title">Utilisateurs</div></a>
-          <a routerLink="/admin/bank-accounts" class="card quick-item"><div class="quick-icon">🏦</div><div class="quick-title">Comptes</div></a>
-          <a routerLink="/admin/registrations" class="card quick-item"><div class="quick-icon">📋</div><div class="quick-title">Inscriptions</div></a>
-          <a routerLink="/admin/transfers" class="card quick-item"><div class="quick-icon">💸</div><div class="quick-title">Virements</div></a>
-          <a routerLink="/admin/credits" class="card quick-item"><div class="quick-icon">💰</div><div class="quick-title">Crédits</div></a>
-          <a routerLink="/admin/fraud-alerts" class="card quick-item"><div class="quick-icon">🚨</div><div class="quick-title">Fraude</div></a>
         </div>
       </main>
     </div>
   `,
   styles: [`
-    .section-title { margin: 1.5rem 0 0.75rem; font-size: 0.8rem; color: var(--gray-500); font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+    .dashboard-content { margin-top: 1.5rem; }
+    .main-stats { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem; }
+    .stats-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
     
-    .financial-summary .stat-card { padding: 2rem; }
+    .stat-card { padding: 1.5rem; border-radius: 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
     .premium-gradient { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; border: none; }
-    .premium-gradient .stat-label { color: var(--accent); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .premium-gradient .stat-value { font-size: 2.5rem; margin-top: 0.5rem; }
-    .currency-tag { font-size: 1rem; opacity: 0.6; margin-left: 0.5rem; }
+    .stat-label { font-size: 0.8rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 2.2rem; font-weight: 800; margin-top: 0.5rem; }
+    .stat-value small { font-size: 1rem; opacity: 0.6; }
+    .stat-value-sm { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+    .stat-icon-bg { position: absolute; right: -10px; bottom: -10px; font-size: 6rem; opacity: 0.1; transform: rotate(-15deg); }
 
-    .pulse { animation: pulse-shadow 2s infinite; }
-    @keyframes pulse-shadow {
-      0% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.7); }
-      70% { box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
+    .grid-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
+    .section-head { margin-bottom: 1rem; }
+    .section-head h3 { font-size: 0.85rem; color: var(--gray-500); font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+    .link-sm { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-decoration: none; text-transform: uppercase; }
+
+    .activity-feed-premium { background: white; border-radius: 24px; border: 1px solid var(--gray-100); overflow: hidden; }
+    .audit-item-row { padding: 1.25rem; display: flex; align-items: center; gap: 1.25rem; border-bottom: 1px solid var(--gray-50); transition: background 0.2s; }
+    .audit-item-row:hover { background: var(--gray-50); }
+    .audit-icon { width: 12px; height: 12px; border-radius: 50%; background: var(--gray-200); }
+    .cat-fraud { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+    .cat-approve { background: var(--success); }
+    .cat-reject { background: var(--warning); }
+    .audit-info { flex: 1; }
+    .audit-action { font-size: 0.9rem; font-weight: 700; color: var(--primary); }
+    .audit-meta { font-size: 0.75rem; color: var(--gray-500); margin-top: 2px; }
+    .audit-time { font-size: 0.75rem; color: var(--gray-400); font-weight: 600; }
+
+    .priority-actions-list { display: flex; flex-direction: column; gap: 1rem; }
+    .priority-card {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.5rem; background: white; border-radius: 20px;
+      border: 1px solid var(--gray-100); text-decoration: none; transition: all 0.2s;
     }
+    .priority-card:hover { transform: translateX(5px); border-color: var(--accent); box-shadow: var(--shadow); }
+    .priority-card.border-warning { border-left: 4px solid var(--warning); }
+    .priority-card.border-danger { border-left: 4px solid var(--danger); }
+    .p-count { font-size: 1.4rem; font-weight: 800; color: var(--primary); display: block; }
+    .p-label { font-size: 0.8rem; color: var(--gray-500); font-weight: 700; }
+    .p-arrow { color: var(--accent); font-weight: 800; font-size: 1.2rem; }
 
-    .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    .stats-grid.compact { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
-    .glass-style { background: white; border: 1px solid var(--gray-100); padding: 1.25rem; }
-    .glass-style .stat-label { font-size: 0.7rem; color: var(--gray-500); font-weight: 700; text-transform: uppercase; }
-    .glass-style .stat-value { font-size: 1.5rem; margin-top: 0.25rem; }
-
-    .border-warning { border-left: 3px solid var(--warning); }
-    .border-danger { border-left: 3px solid var(--danger); }
-
-    .activity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
-    .premium-surface { background: white; border: 1px solid var(--gray-100); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
-    .activity-head { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: var(--gray-50); border-bottom: 1px solid var(--gray-100); }
-    .activity-title { font-weight: 800; color: var(--primary); font-size: 0.85rem; text-transform: uppercase; }
-    .activity-link { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-decoration: none; text-transform: uppercase; }
-    
-    .activity-body { max-height: 420px; overflow-y: auto; }
-    .activity-item { padding: 1rem 1.25rem; border-bottom: 1px solid var(--gray-50); transition: all 0.05s; }
-    .activity-item:hover { background: var(--gray-50); }
-
-    .activity-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; }
-    .activity-amount { font-weight: 700; color: var(--primary); font-size: 1rem; }
-    .activity-amount small { font-size: 0.7rem; opacity: 0.6; }
-    .activity-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--gray-600); }
-    .activity-name { font-weight: 500; }
-    .activity-date { font-size: 0.7rem; color: var(--gray-400); margin-top: 0.5rem; }
-
-    .status-indicator { width: 8px; height: 8px; border-radius: 50%; }
-    .st-pending { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
-    .st-approved, .st-executed, .st-disbursed { background: var(--success); box-shadow: 0 0 6px var(--success); }
-    .st-rejected, .st-failed { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
-
-    .badge-sub { font-size: 0.7rem; color: var(--gray-500); background: var(--gray-100); padding: 0.1rem 0.4rem; border-radius: 4px; }
-    .empty-mini { padding: 3rem 1rem; text-align: center; color: var(--gray-400); font-size: 0.85rem; font-style: italic; }
-
-    .quick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
-    .quick-item { 
-      text-decoration: none; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; 
-      background: white; border: 1px solid var(--gray-100); border-radius: var(--radius); transition: all 0.05s;
+    .resources-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .res-pill {
+      padding: 0.6rem 1rem; background: var(--gray-50); border: 1px solid var(--gray-100);
+      border-radius: 100px; color: var(--primary); font-size: 0.8rem; font-weight: 700;
+      text-decoration: none; transition: all 0.2s;
     }
-    .quick-item:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--accent); }
-    .quick-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    .quick-title { font-weight: 700; color: var(--primary); font-size: 0.75rem; text-transform: uppercase; }
+    .res-pill:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-    .text-info { color: var(--info) !important; }
-    .text-warning { color: var(--warning) !important; }
-    .text-danger { color: var(--danger) !important; }
+    .status-pill {
+      background: var(--gray-50); border: 1px solid var(--gray-100);
+      padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.7rem;
+      font-weight: 800; color: var(--success); display: flex; align-items: center; gap: 0.6rem;
+    }
+    .pulse-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    .shadow-premium { box-shadow: 0 10px 40px rgba(0,0,0,0.06); }
   `]
 })
 export class AdminDashboardComponent implements OnInit {

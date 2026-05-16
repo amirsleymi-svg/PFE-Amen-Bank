@@ -6,6 +6,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { AuditLog } from '../../../core/models/api.models';
 import { DatePipe } from '@angular/common';
 import { auditActionFr, entityTypeFr } from '../../../shared/display-labels';
+import { NotificationWebsocketService } from '../../../core/services/notification-websocket.service';
 
 type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | 'activate' | 'login' | 'fraud' | 'other';
 
@@ -228,7 +229,7 @@ export class AuditLogsComponent implements OnInit {
   auditActionFr = auditActionFr;
   entityTypeFr = entityTypeFr;
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private wsService: NotificationWebsocketService) {}
 
   ngOnInit() { this.load(); }
 
@@ -273,13 +274,13 @@ export class AuditLogsComponent implements OnInit {
   categoryOf(action: string): ActionCategory {
     const a = (action || '').toUpperCase();
     if (a.includes('FRAUD')) return 'fraud';
-    if (a.includes('APPROVE')) return 'approve';
-    if (a.includes('REJECT')) return 'reject';
-    if (a.includes('DISABLE') || a.includes('FREEZE') || a.includes('LOCK')) return 'disable';
-    if (a.includes('ACTIVATE') || a.includes('UNLOCK') || a.includes('ENABLE')) return 'activate';
-    if (a.includes('DELETE') || a.includes('REMOVE')) return 'delete';
-    if (a.includes('CREATE') || a.includes('INITIATE') || a.includes('REGISTER')) return 'create';
-    if (a.includes('LOGIN') || a.includes('LOGOUT') || a.includes('AUTH')) return 'login';
+    if (a.includes('APPROVE') || a.includes('APPROBATION')) return 'approve';
+    if (a.includes('REJECT') || a.includes('REJET') || a.includes('REFUS')) return 'reject';
+    if (a.includes('DISABLE') || a.includes('FREEZE') || a.includes('LOCK') || a.includes('SUSPENSION') || a.includes('GEL')) return 'disable';
+    if (a.includes('ACTIVATE') || a.includes('UNLOCK') || a.includes('ENABLE') || a.includes('ACTIVATION')) return 'activate';
+    if (a.includes('DELETE') || a.includes('REMOVE') || a.includes('SUPPRESSION')) return 'delete';
+    if (a.includes('CREATE') || a.includes('INITIATE') || a.includes('REGISTER') || a.includes('CREATION') || a.includes('DEMANDE')) return 'create';
+    if (a.includes('LOGIN') || a.includes('LOGOUT') || a.includes('AUTH') || a.includes('CONNEXION')) return 'login';
     return 'other';
   }
 
@@ -291,7 +292,10 @@ export class AuditLogsComponent implements OnInit {
 
   load() {
     this.api.getAuditLogs().subscribe({
-      next: r => { if (r.data?.content) this.logs.set(r.data.content); },
+      next: r => {
+        if (r.data?.content) this.logs.set(r.data.content);
+        this.api.markBadgesSeen().subscribe({ next: () => this.wsService.fetchCounts(), error: () => {} });
+      },
       error: () => {}
     });
   }

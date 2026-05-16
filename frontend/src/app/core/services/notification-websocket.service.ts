@@ -8,6 +8,7 @@ import { User } from '../models/api.models';
 @Injectable({ providedIn: 'root' })
 export class NotificationWebsocketService {
   private ws: WebSocket | null = null;
+  private shouldReconnect = false;
   
   private unreadCountSubject = new BehaviorSubject<number>(0); // ADDED
   unreadCount$ = this.unreadCountSubject.asObservable(); // ADDED
@@ -47,6 +48,7 @@ export class NotificationWebsocketService {
     if (!user || this.ws) return;
 
     const url = `wss://localhost:8443/ws/notifications?userId=${user.id}`;
+    this.shouldReconnect = true;
     this.ws = new WebSocket(url);
 
     this.ws.onmessage = (event) => {
@@ -57,9 +59,7 @@ export class NotificationWebsocketService {
           this.refreshSubject.next();
         } else {
           // It's a normal notification
-          const nextCount = this.unreadCountSubject.value + 1; // IMPROVED
-          this.unreadCountSubject.next(nextCount); // IMPROVED
-          this.unreadCount.set(nextCount); // Sync signal
+          this.setUnreadCount(this.unreadCountSubject.value + 1);
           this.notificationSubject.next(payload);
         }
       } catch (e) {
@@ -69,15 +69,31 @@ export class NotificationWebsocketService {
 
     this.ws.onclose = () => {
       this.ws = null;
-      setTimeout(() => this.connect(), 5000); // Reconnect after 5s
+      if (this.shouldReconnect) {
+        setTimeout(() => this.connect(), 5000); // Reconnect after 5s
+      }
     };
   }
 
   disconnect() {
+    this.shouldReconnect = false;
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    this.setUnreadCount(0);
+    this.badgeCountsSubject.next({});
+    this.badgeCounts.set({});
+  }
+
+  setUnreadCount(count: number) {
+    const next = Math.max(0, count);
+    this.unreadCountSubject.next(next);
+    this.unreadCount.set(next);
+  }
+
+  adjustUnreadCount(delta: number) {
+    this.setUnreadCount(this.unreadCountSubject.value + delta);
   }
 
   fetchCounts() {
@@ -87,8 +103,7 @@ export class NotificationWebsocketService {
     // Fetch unread notification count
     this.api.getUnreadCount().subscribe(r => {
       if (r.data) {
-        this.unreadCountSubject.next(r.data.count); // IMPROVED
-        this.unreadCount.set(r.data.count); // Sync signal
+        this.setUnreadCount(r.data.count);
       }
     });
 

@@ -1,4 +1,5 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, computed } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -8,137 +9,142 @@ import { AccountCard, BankAccount, CardTransferDirection } from '../../../core/m
 
 @Component({
   selector: 'app-cards',
-  imports: [SidebarComponent, FormsModule, DatePipe, DecimalPipe],
+  imports: [SidebarComponent, FormsModule, DatePipe, DecimalPipe, RouterLink],
   template: `
     <div class="layout">
       <app-sidebar [items]="navItems" />
       <main class="main-content">
         <div class="page-header flex-between">
           <div>
-            <h1 class="outfit">Cartes Bancaires</h1>
-            <p class="subtitle outfit">Gérez vos moyens de paiement et plafonds en temps réel.</p>
+            <h1 class="outfit">{{ viewMode() === 'request' ? 'Demande de carte bancaire' : 'Mes Cartes Premium' }}</h1>
+            <p class="subtitle outfit">{{ viewMode() === 'request' ? 'Choisissez le compte à associer à votre nouvelle carte.' : 'Gérez vos moyens de paiement et plafonds en temps réel.' }}</p>
           </div>
         </div>
 
         @if (msg()) { <div class="alert animate-in" [class.alert-success]="!isError()" [class.alert-error]="isError()">{{ msg() }}</div> }
 
-        <div class="card premium-card mb-3">
-          <div class="flex-between align-center">
-            <div>
-              <h3 class="outfit mb-1">Nouvelle Carte</h3>
-              <p class="size-xs color-gray-500">Générez une carte liée à l'un de vos comptes bancaires actifs.</p>
+        @if (viewMode() === 'request') {
+          <div class="card premium-card mb-3 animate-in">
+            <div class="flex-between align-center">
+              <div>
+                <h3 class="outfit mb-1">Nouvelle carte</h3>
+                <p class="size-xs color-gray-500">Carte rattachée à un compte actif Amen Bank.</p>
+              </div>
             </div>
+            <div class="flex gap-1 mt-2 align-end wrap">
+              <div class="form-group flex-1 min-w-300 mb-0">
+                <label class="outfit size-xs uppercase color-gray-400">Sélectionner le compte source</label>
+                <select [(ngModel)]="requestAccountId" name="reqAcc" class="premium-select">
+                  <option [ngValue]="null">-- Choisir un compte --</option>
+                  @for (a of eligibleAccounts(); track a.id) {
+                    <option [ngValue]="a.id">{{ a.accountNumber }} ({{ a.balance | number:'1.3-3' }} TND)</option>
+                  }
+                </select>
+              </div>
+              <button class="btn btn-primary outfit" (click)="onRequest()" [disabled]="!requestAccountId || loading()">
+                {{ loading() ? 'Traitement...' : 'ENVOYER LA DEMANDE' }}
+              </button>
+            </div>
+            @if (eligibleAccounts().length === 0) {
+              <p class="size-xs color-gray-400 mt-1 italic">Tous vos comptes actifs disposent déjà d'une carte associée.</p>
+            }
           </div>
-          <div class="flex gap-1 mt-2 align-end wrap">
-            <div class="form-group flex-1 min-w-300 mb-0">
-              <label class="outfit size-xs uppercase color-gray-400">Sélectionner le compte source</label>
-              <select [(ngModel)]="requestAccountId" name="reqAcc" class="premium-select">
-                <option [ngValue]="null">-- Choisir un compte --</option>
-                @for (a of eligibleAccounts(); track a.id) {
-                  <option [ngValue]="a.id">{{ a.accountNumber }} ({{ a.balance | number:'1.3-3' }} TND)</option>
+        }
+
+        @if (viewMode() === 'manage') {
+          @if (confirmDelete()) {
+            <div class="overlay animate-in" (click)="confirmDelete.set(null)">
+              <div class="dialog glass-style-dark" (click)="$event.stopPropagation()">
+                <h3 class="outfit color-white">Révocation de Carte</h3>
+                <p class="mb-2">Confirmez-vous la suppression définitive de la carte <strong>{{ confirmDelete()!.cardNumberMasked }}</strong> ?</p>
+                @if (confirmDelete()!.balance > 0) {
+                  <div class="warning-box mb-2">
+                    <p class="size-xs color-accent font-bold uppercase">Restitution de fonds</p>
+                    <p class="size-xs color-gray-300">Le solde de {{ confirmDelete()!.balance | number:'1.3-3' }} TND sera crédité sur {{ confirmDelete()!.accountIban }}.</p>
+                  </div>
                 }
-              </select>
-            </div>
-            <button class="btn btn-primary outfit" (click)="onRequest()" [disabled]="!requestAccountId || loading()">
-              {{ loading() ? 'Génération...' : 'DEMANDER LA CARTE' }}
-            </button>
-          </div>
-          @if (eligibleAccounts().length === 0) {
-            <p class="size-xs color-gray-400 mt-1 italic">Tous vos comptes actifs disposent déjà d'une carte associée.</p>
-          }
-        </div>
-
-        @if (confirmDelete()) {
-          <div class="overlay animate-in" (click)="confirmDelete.set(null)">
-            <div class="dialog glass-style-dark" (click)="$event.stopPropagation()">
-              <h3 class="outfit color-white">Révocation de Carte</h3>
-              <p class="mb-2">Confirmez-vous la suppression définitive de la carte <strong>{{ confirmDelete()!.cardNumberMasked }}</strong> ?</p>
-              @if (confirmDelete()!.balance > 0) {
-                <div class="warning-box mb-2">
-                  <p class="size-xs color-accent font-bold uppercase">Restitution de fonds</p>
-                  <p class="size-xs color-gray-300">Le solde de {{ confirmDelete()!.balance | number:'1.3-3' }} TND sera crédité sur {{ confirmDelete()!.accountIban }}.</p>
-                </div>
-              }
-              <div class="flex gap-1">
-                <button class="btn btn-ghost" (click)="confirmDelete.set(null)">Annuler</button>
-                <button class="btn btn-danger" (click)="onDelete()">CONFIRMER LA SUPPRESSION</button>
-              </div>
-            </div>
-          </div>
-        }
-
-        @if (transferCard()) {
-          <div class="overlay animate-in" (click)="closeTransfer()">
-            <div class="dialog glass-style" (click)="$event.stopPropagation()">
-              <h3 class="outfit">Rechargement Express</h3>
-              <div class="card-preview-mini mb-2">
-                <div class="preview-number outfit">{{ transferCard()!.cardNumberMasked }}</div>
-                <div class="preview-balance outfit">{{ transferCard()!.balance | number:'1.3-3' }} TND</div>
-              </div>
-              <div class="form-group mb-2">
-                <label class="outfit size-xs uppercase color-gray-400">Montant à transférer (TND)</label>
-                <input type="number" min="0.001" step="0.001" [(ngModel)]="transferAmount" name="amt" class="premium-input text-center size-xl font-bold" placeholder="0.000">
-              </div>
-              <div class="flex gap-1">
-                <button class="btn btn-ghost" (click)="closeTransfer()">Annuler</button>
-                <button class="btn btn-primary flex-1 outfit" (click)="onTransfer()" [disabled]="!transferAmount || transferAmount <= 0">CONFIRMER LE RECHARGEMENT</button>
-              </div>
-            </div>
-          </div>
-        }
-
-        <div class="cards-grid">
-          @for (c of cards(); track c.id) {
-            <div class="virtual-card-wrapper animate-in">
-              <div class="virtual-card" [class]="'theme-' + (c.id % 3)">
-                <div class="card-noise"></div>
-                <div class="card-glow"></div>
-                <div class="card-header-v flex-between">
-                  <div class="bank-logo-v outfit">AMEN BANK</div>
-                  <div class="contactless-icon">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 12.09c-2.97-.38-5.57-2.1-6.87-4.57.11-.63.33-1.23.63-1.78.3-.55.7-1.04 1.17-1.45.24-.2.52-.36.82-.47.3-.11.61-.17.93-.17.32 0 .63.06.93.17.3.11.58.27.82.47.47.41.87.9 1.17 1.45.3.55.52 1.15.63 1.78-1.3 2.47-3.9 4.19-6.87 4.57z"/></svg>
-                  </div>
-                </div>
-                <div class="chip"></div>
-                <div class="card-number-v outfit">{{ c.cardNumberMasked }}</div>
-                <div class="flex-between align-end">
-                  <div class="card-holder-v">
-                    <div class="label outfit">Valide jusqu'à</div>
-                    <div class="value outfit">{{ c.expiryDate | date:'MM/yy' }}</div>
-                  </div>
-                  <div class="card-type-v outfit">PREMIUM</div>
+                <div class="flex gap-1">
+                  <button class="btn btn-ghost" (click)="confirmDelete.set(null)">Annuler</button>
+                  <button class="btn btn-danger" (click)="onDelete()">CONFIRMER LA SUPPRESSION</button>
                 </div>
               </div>
-              
-              <div class="card-management-panel">
-                <div class="flex-between align-center mb-1">
-                  <div class="panel-balance">
-                    <span class="label outfit">SOLDE CARTE</span>
-                    <span class="val outfit">{{ c.balance | number:'1.3-3' }} <small>TND</small></span>
-                  </div>
-                  <span class="status-indicator-v" [class]="'st-' + c.status.toLowerCase()">{{ statusLabel(c.status) }}</span>
-                </div>
-                <div class="panel-actions">
-                  @if (c.status === 'ACTIVE') {
-                    <button class="btn btn-primary btn-sm flex-1 outfit" (click)="openTransfer(c)">RECHARGER</button>
-                    <button class="btn btn-ghost btn-sm outfit" (click)="deactivate(c.id)">BLOQUER</button>
-                  }
-                  @if (c.status === 'DISABLED') {
-                    <button class="btn btn-accent btn-sm flex-1 outfit" (click)="activate(c.id)">ACTIVER</button>
-                  }
-                  @if (c.status !== 'EXPIRED') {
-                    <button class="btn btn-ghost btn-danger-text btn-sm" (click)="confirmDelete.set(c)">✕</button>
-                  }
-                </div>
-              </div>
-            </div>
-          } @empty {
-            <div class="empty-state-full col-span-full">
-              <div class="empty-icon">💳</div>
-              <p class="outfit">Aucune carte active. Commandez votre première carte ci-dessus.</p>
             </div>
           }
-        </div>
+
+          @if (transferCard()) {
+            <div class="overlay animate-in" (click)="closeTransfer()">
+              <div class="dialog glass-style" (click)="$event.stopPropagation()">
+                <h3 class="outfit">Rechargement Express</h3>
+                <div class="card-preview-mini mb-2">
+                  <div class="preview-number outfit">{{ transferCard()!.cardNumberMasked }}</div>
+                  <div class="preview-balance outfit">{{ transferCard()!.balance | number:'1.3-3' }} TND</div>
+                </div>
+                <div class="form-group mb-2">
+                  <label class="outfit size-xs uppercase color-gray-400">Montant à transférer (TND)</label>
+                  <input type="number" min="0.001" step="0.001" [(ngModel)]="transferAmount" name="amt" class="premium-input text-center size-xl font-bold" placeholder="0.000">
+                </div>
+                <div class="flex gap-1">
+                  <button class="btn btn-ghost" (click)="closeTransfer()">Annuler</button>
+                  <button class="btn btn-primary flex-1 outfit" (click)="onTransfer()" [disabled]="!transferAmount || transferAmount <= 0">CONFIRMER LE RECHARGEMENT</button>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="cards-grid">
+            @for (c of cards(); track c.id) {
+              <div class="virtual-card-wrapper animate-in">
+                <div class="virtual-card" [class]="'theme-' + (c.id % 3)">
+                  <div class="card-noise"></div>
+                  <div class="card-glow"></div>
+                  <div class="card-header-v flex-between">
+                    <div class="bank-logo-v outfit">AMEN BANK</div>
+                    <div class="contactless-icon">
+                      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 12.09c-2.97-.38-5.57-2.1-6.87-4.57.11-.63.33-1.23.63-1.78.3-.55.7-1.04 1.17-1.45.24-.2.52-.36.82-.47.3-.11.61-.17.93-.17.32 0 .63.06.93.17.3.11.58.27.82.47.47.41.87.9 1.17 1.45.3.55.52 1.15.63 1.78-1.3 2.47-3.9 4.19-6.87 4.57z"/></svg>
+                    </div>
+                  </div>
+                  <div class="chip"></div>
+                  <div class="card-number-v outfit">{{ c.cardNumberMasked }}</div>
+                  <div class="flex-between align-end">
+                    <div class="card-holder-v">
+                      <div class="label outfit">Valide jusqu'à</div>
+                      <div class="value outfit">{{ c.expiryDate | date:'MM/yy' }}</div>
+                    </div>
+                    <div class="card-type-v outfit">PREMIUM</div>
+                  </div>
+                </div>
+                
+                <div class="card-management-panel">
+                  <div class="flex-between align-center mb-1">
+                    <div class="panel-balance">
+                      <span class="label outfit">SOLDE CARTE</span>
+                      <span class="val outfit">{{ c.balance | number:'1.3-3' }} <small>TND</small></span>
+                    </div>
+                    <span class="status-indicator-v" [class]="'st-' + c.status.toLowerCase()">{{ statusLabel(c.status) }}</span>
+                  </div>
+                  <div class="panel-actions">
+                    @if (c.status === 'ACTIVE') {
+                      <button class="btn btn-primary btn-sm flex-1 outfit" (click)="openTransfer(c)">RECHARGER</button>
+                      <button class="btn btn-ghost btn-sm outfit" (click)="deactivate(c.id)">BLOQUER</button>
+                    }
+                    @if (c.status === 'DISABLED') {
+                      <button class="btn btn-accent btn-sm flex-1 outfit" (click)="activate(c.id)">ACTIVER</button>
+                    }
+                    @if (c.status !== 'EXPIRED') {
+                      <button class="btn btn-ghost btn-danger-text btn-sm" (click)="confirmDelete.set(c)">✕</button>
+                    }
+                  </div>
+                </div>
+              </div>
+            } @empty {
+              <div class="empty-state-full col-span-full">
+                <div class="empty-icon">💳</div>
+                <p class="outfit">Aucune carte active.</p>
+                <button class="btn btn-primary btn-sm mt-1" routerLink="/client/cards/request">Commander une carte</button>
+              </div>
+            }
+          </div>
+        }
       </main>
     </div>
   `,
@@ -202,7 +208,9 @@ export class CardsComponent implements OnInit {
   transferDirection: CardTransferDirection = 'ACCOUNT_TO_CARD';
   transferAmount: number | null = null;
 
-  constructor(private api: ApiService) {}
+  viewMode = computed(() => this.router.url.includes('request') ? 'request' : 'manage');
+
+  constructor(private api: ApiService, private router: Router) {}
   navItems = CLIENT_NAV;
 
   ngOnInit() { this.load(); }

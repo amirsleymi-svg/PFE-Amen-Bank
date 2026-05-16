@@ -41,6 +41,24 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.action IN :actions AND a.isRead = false")
     long countByActionInAndIsReadFalse(@Param("actions") Collection<String> actions);
 
+    @Query("""
+            SELECT COUNT(a) FROM AuditLog a
+            WHERE a.isRead = false AND (
+                UPPER(a.action) LIKE '%REGISTRATION%' OR
+                UPPER(a.action) LIKE '%TRANSFER%' OR
+                UPPER(a.action) LIKE '%CREDIT%' OR
+                UPPER(a.action) LIKE '%PASSWORD_RESET%' OR
+                UPPER(a.action) LIKE '%FRAUD%' OR
+                UPPER(a.action) LIKE '%INCREASE_BALANCE%' OR
+                UPPER(a.action) LIKE '%CARD%' OR
+                UPPER(a.action) LIKE '%SECURITY%' OR
+                UPPER(a.action) LIKE '%LOCK%' OR
+                UPPER(a.action) LIKE '%DISABLE%' OR
+                UPPER(a.action) LIKE '%FREEZE%'
+            )
+            """)
+    long countUnreadImportant();
+
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional
     @Query("UPDATE AuditLog a SET a.isRead = true WHERE a.isRead = false")

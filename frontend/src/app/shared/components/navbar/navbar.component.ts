@@ -13,11 +13,11 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
   template: `
     <header class="navbar glass-style">
       <div class="nav-left">
-        <!-- Optional: search or breadcrumbs could go here -->
+        <h2 class="outfit current-page-title">{{ getPageTitle() }}</h2>
       </div>
       <div class="nav-right">
         <div class="notification-wrapper">
-          <button class="notif-btn" (click)="toggleDropdown()" [class.has-unread]="unreadCount() > 0">
+          <button class="notif-btn" (click)="toggleDropdown()" [class.has-unread]="unreadCount() > 0" [attr.aria-label]="isClient() ? 'Notifications' : 'Alertes prioritaires'">
             <span class="bell-icon">🔔</span>
             @if (unreadCount() > 0) {
               <span class="badge pulse-animation">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
@@ -25,9 +25,9 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
           </button>
 
           @if (showDropdown()) {
-            <div class="notif-dropdown animate-in">
+            <div class="notif-dropdown animate-in shadow-premium" [class.alert-mode]="isStaff()">
               <div class="dropdown-header">
-                <h3 class="outfit">Notifications</h3>
+                <h3 class="outfit">{{ isClient() ? 'Notifications client' : 'Alertes prioritaires' }}</h3>
                 <button class="mark-all-btn outfit" (click)="markAllRead()" [disabled]="unreadCount() === 0">
                   Tout marquer lu
                 </button>
@@ -36,11 +36,11 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
                 @if (loading()) {
                   <div class="notif-loading"><span class="spinner"></span></div>
                 } @else if (notifications().length === 0) {
-                  <div class="notif-empty outfit">Aucune notification</div>
+                  <div class="notif-empty outfit">Aucune {{ isClient() ? 'notification' : 'alerte' }}</div>
                 } @else {
                   @for (n of notifications(); track n.id) {
-                    <div class="notif-item" [class.unread]="!n.isRead" (click)="navigateToNotif(n)">
-                      <div class="notif-dot" [class]="'priority-' + n.priority?.toLowerCase()"></div>
+                    <div class="notif-item" [class.unread]="!n.isRead" [class.staff-alert]="isStaff()" (click)="acknowledgeNotif(n)">
+                      <div class="notif-dot" [class]="'priority-' + priorityClass(n)"></div>
                       <div class="notif-main">
                         <div class="notif-title outfit">{{ n.title }}</div>
                         <div class="notif-msg outfit">{{ n.message }}</div>
@@ -50,12 +50,25 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
                   }
                 }
               </div>
-              <div class="dropdown-footer">
-                <a routerLink="/client/notifications" (click)="showDropdown.set(false)" class="outfit">Voir tout</a>
-              </div>
+              @if (isClient()) {
+                <div class="dropdown-footer">
+                  <a routerLink="/client/notifications" (click)="showDropdown.set(false)" class="outfit">Voir toutes les notifications</a>
+                </div>
+              } @else {
+                <div class="dropdown-footer staff-footer outfit">
+                  Espace alertes dédié
+                </div>
+              }
             </div>
             <div class="dropdown-overlay" (click)="showDropdown.set(false)"></div>
           }
+        </div>
+        
+        <div class="nav-divider"></div>
+        
+        <div class="user-pill outfit">
+          <span class="user-name">{{ auth.user()?.firstName }}</span>
+          <div class="user-avatar-mini">{{ initials() }}</div>
         </div>
       </div>
     </header>
@@ -119,6 +132,7 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
       overflow: hidden;
       z-index: 101;
     }
+    .notif-dropdown.alert-mode { border-top: 3px solid var(--danger); }
     .dropdown-header {
       padding: 1rem 1.5rem;
       border-bottom: 1px solid var(--gray-50);
@@ -139,15 +153,36 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
     }
     .notif-item:hover { background: var(--gray-50); }
     .notif-item.unread { background: rgba(0, 61, 110, 0.02); }
+    .notif-item.staff-alert.unread { background: rgba(239, 68, 68, 0.035); }
     .notif-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--gray-300); }
     .notif-dot.priority-high { background: var(--danger); box-shadow: 0 0 5px var(--danger); }
+    .notif-dot.priority-critical { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-light); }
+    .notif-dot.priority-normal { background: var(--accent); }
     .notif-main { flex: 1; min-width: 0; }
     .notif-title { font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
     .notif-msg { font-size: 0.8rem; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .notif-time { font-size: 0.7rem; color: var(--gray-400); margin-top: 4px; }
     .dropdown-footer { padding: 0.75rem; text-align: center; border-top: 1px solid var(--gray-50); }
     .dropdown-footer a { color: var(--primary); font-size: 0.8rem; font-weight: 700; text-decoration: none; }
+    .staff-footer { color: var(--gray-500); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
     .dropdown-overlay { position: fixed; inset: 0; z-index: 100; }
+
+    .nav-divider { width: 1px; height: 24px; background: var(--gray-200); margin: 0 1rem; }
+    .user-pill {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.4rem 0.4rem 0.4rem 1rem;
+      background: var(--gray-50); border-radius: 100px;
+      border: 1px solid var(--gray-100);
+    }
+    .user-name { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+    .user-avatar-mini {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--primary); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 800;
+    }
+    .shadow-premium { box-shadow: 0 15px 50px rgba(0,0,0,0.12); }
+    .current-page-title { font-size: 1.1rem; color: var(--primary); margin: 0; font-weight: 800; }
   `]
 })
 export class NavbarComponent implements OnInit {
@@ -158,11 +193,21 @@ export class NavbarComponent implements OnInit {
 
   constructor(
     private api: ApiService,
-    private auth: AuthService,
+    public auth: AuthService,
     private wsService: NotificationWebsocketService
   ) { 
-    // Bind to BehaviorSubject - ADDED
     this.wsService.unreadCount$.subscribe(count => this.unreadCount.set(count));
+  }
+
+  isClient() { return this.auth.user()?.role === 'CLIENT'; }
+  isStaff() { return this.auth.user()?.role === 'ADMIN' || this.auth.user()?.role === 'EMPLOYEE'; }
+  initials() { 
+    const u = this.auth.user();
+    return u ? (u.firstName[0] + u.lastName[0]).toUpperCase() : '';
+  }
+  getPageTitle() {
+    const role = this.auth.user()?.role;
+    return role === 'ADMIN' ? 'Espace Admin' : role === 'EMPLOYEE' ? 'Espace Employé' : 'Amen Bank';
   }
 
   ngOnInit() {
@@ -192,19 +237,29 @@ export class NavbarComponent implements OnInit {
 
   markAllRead() {
     this.api.markAllAsRead().subscribe(() => {
-      this.wsService.unreadCount.set(0);
+      this.wsService.setUnreadCount(0);
       this.notifications.update(list => list.map(n => ({ ...n, isRead: true })));
     });
   }
 
-  navigateToNotif(n: any) {
+  acknowledgeNotif(n: any) {
     if (!n.isRead) {
       this.api.markAsRead(n.id).subscribe(() => {
-        this.wsService.unreadCount.update(c => Math.max(0, c - 1));
+        this.wsService.adjustUnreadCount(-1);
         n.isRead = true;
       });
     }
     this.showDropdown.set(false);
-    // Navigation logic could be added here based on notification type
+  }
+
+  priorityClass(n: any): 'normal' | 'high' | 'critical' {
+    const text = `${n?.type || ''} ${n?.title || ''} ${n?.message || ''}`.toUpperCase();
+    if (text.includes('CRITICAL') || text.includes('FRAUD') || text.includes('GELER') || text.includes('BLOQUE')) {
+      return 'critical';
+    }
+    if (this.isStaff() || text.includes('VALIDER') || text.includes('ATTENTE') || text.includes('SECUR')) {
+      return 'high';
+    }
+    return 'normal';
   }
 }

@@ -8,6 +8,8 @@ import com.amenbank.dto.response.CreditSimulationResponse;
 import com.amenbank.entity.BankAccount;
 import com.amenbank.entity.CreditRequest;
 import com.amenbank.entity.CreditSimulation;
+import com.amenbank.entity.Notification;
+import com.amenbank.entity.Transaction;
 import com.amenbank.entity.User;
 import com.amenbank.exception.BusinessException;
 import com.amenbank.notification.NotificationService;
@@ -15,6 +17,8 @@ import com.amenbank.notification.NotificationWebSocketHandler;
 import com.amenbank.repository.BankAccountRepository;
 import com.amenbank.repository.CreditRequestRepository;
 import com.amenbank.repository.CreditSimulationRepository;
+import com.amenbank.repository.TransactionRepository;
+import com.amenbank.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +34,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +44,8 @@ public class CreditService {
     private final CreditRequestRepository creditRequestRepository;
     private final CreditSimulationRepository creditSimulationRepository;
     private final BankAccountRepository bankAccountRepository;
+    private final TransactionRepository transactionRepository;
+    private final UserRepository userRepository;
     private final AuditService auditService;
     private final NotificationService notificationService;
     private final NotificationWebSocketHandler notificationWebSocketHandler;
@@ -84,6 +91,11 @@ public class CreditService {
                 "Votre demande de credit de " + dto.getAmount() + " TND sur " + dto.getDurationMonths() +
                 " mois (ref: CR-" + String.format("%06d", request.getId()) + ") est en attente d'approbation. " +
                 "Vous serez notifie des qu'un employe aura traite votre dossier.");
+
+        notifyEmployees("Nouveau credit a valider",
+                "Demande CR-" + String.format("%06d", request.getId()) + " de " + dto.getAmount() +
+                        " TND pour " + user.getFirstName() + " " + user.getLastName() +
+                        ". Action attendue: analyser puis approuver ou rejeter le dossier.");
 
         notificationWebSocketHandler.broadcastBadgeRefresh();
         return mapToResponse(request);
@@ -137,13 +149,31 @@ public class CreditService {
         targetAccount.setBalance(targetAccount.getBalance().add(request.getAmount()));
         bankAccountRepository.save(targetAccount);
 
+        Transaction disbursement = Transaction.builder()
+                .reference(generateCreditReference())
+                .type(Transaction.TransactionType.CREDIT_DISBURSEMENT)
+                .status(Transaction.TransactionStatus.EXECUTED)
+                .amount(request.getAmount())
+                .destinationAccount(targetAccount)
+                .descriptionText("Versement credit CR-" + String.format("%06d", request.getId()))
+                .initiatedBy(reviewer)
+                .approvedBy(reviewer)
+                .executedAt(LocalDateTime.now())
+                .build();
+        transactionRepository.save(disbursement);
+
         log.info("Credit #{} disbursed: {} TND to account {} (client {})",
                 id, request.getAmount(), targetAccount.getAccountNumber(),
                 client.getFirstName() + " " + client.getLastName());
 
         auditService.log(reviewer, "APPROVE_CREDIT", "CreditRequest", id,
                 "Credit approved and disbursed: " + request.getAmount() + " TND to account " +
-                        targetAccount.getAccountNumber());
+                        targetAccount.getAccountNumber() + " (transaction " + disbursement.getReference() + ")");
+
+        auditService.log(reviewer, "CREDIT_DISBURSEMENT", "Transaction", disbursement.getId(),
+                "Credit disbursement " + disbursement.getReference() + " for CR-" +
+                        String.format("%06d", request.getId()) + " credited account " +
+                        targetAccount.getAccountNumber() + " by " + request.getAmount() + " TND");
 
         String notifMsg = "Votre credit a ete approuve avec succes. Veuillez consulter votre compte bancaire pour verifier le solde disponible.\n\n" +
                 "Details du credit :\n" +
@@ -155,6 +185,10 @@ public class CreditService {
                 "  - Date : " + request.getReviewedAt().toLocalDate() + "\n" +
                 "  - Compte credite : " + targetAccount.getAccountNumber();
         notificationService.sendSuccess(client, "Credit approuve et verse", notifMsg);
+        notifyAdmins("Credit verse au client",
+                "Credit CR-" + String.format("%06d", request.getId()) + " de " + request.getAmount() +
+                        " TND verse sur le compte " + targetAccount.getAccountNumber() +
+                        " (transaction " + disbursement.getReference() + ").");
         notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
@@ -182,6 +216,18 @@ public class CreditService {
                 "Veuillez contacter votre agence pour plus d'informations.";
         notificationService.sendError(request.getClient(), "Credit refuse", rejectMsg);
         notificationWebSocketHandler.broadcastBadgeRefresh();
+    }
+
+    private void notifyAdmins(String title, String message) {
+        for (User admin : userRepository.findAllByRoleName("ADMIN")) {
+            notificationService.send(admin, title, message, Notification.NotificationType.CREDIT);
+        }
+    }
+
+    private void notifyEmployees(String title, String message) {
+        for (User employee : userRepository.findAllByRoleName("EMPLOYEE")) {
+            notificationService.send(employee, title, message, Notification.NotificationType.CREDIT);
+        }
     }
 
     private CreditSimulationResponse calculateCredit(BigDecimal amount, int months, BigDecimal annualRate) {
@@ -257,5 +303,13 @@ public class CreditService {
                 .reviewedAt(r.getReviewedAt())
                 .createdAt(r.getCreatedAt())
                 .build();
+    }
+
+    private String generateCreditReference() {
+        String ref;
+        do {
+            ref = "CRD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        } while (transactionRepository.existsByReference(ref));
+        return ref;
     }
 }

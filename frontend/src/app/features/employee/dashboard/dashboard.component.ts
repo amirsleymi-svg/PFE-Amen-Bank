@@ -26,7 +26,7 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
 
         <div class="stats-grid employee-grid mt-2">
-          <a routerLink="/employee/transfers" class="card premium-action-card">
+          <a routerLink="/employee/demandes-bancaires/transfers" class="card premium-action-card">
             <div class="card-icon">💸</div>
             <div class="card-content">
               <h3 class="outfit">Virements</h3>
@@ -35,7 +35,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <div class="card-arrow">→</div>
           </a>
 
-          <a routerLink="/employee/credits" class="card premium-action-card">
+          <a routerLink="/employee/demandes-bancaires/credits" class="card premium-action-card">
             <div class="card-icon">💰</div>
             <div class="card-content">
               <h3 class="outfit">Crédits</h3>
@@ -47,7 +47,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <a routerLink="/employee/balance" class="card premium-action-card">
             <div class="card-icon">💵</div>
             <div class="card-content">
-              <h3 class="outfit">Gestion Solde</h3>
+              <h3 class="outfit">Dépôt à créditer</h3>
               <p>Créditer les comptes clients</p>
             </div>
             <div class="card-arrow">→</div>

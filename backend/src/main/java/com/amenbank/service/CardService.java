@@ -13,6 +13,7 @@ import com.amenbank.notification.NotificationService;
 import com.amenbank.repository.AccountCardRepository;
 import com.amenbank.repository.BankAccountRepository;
 import com.amenbank.repository.TransactionRepository;
+import com.amenbank.repository.UserRepository;
 import com.amenbank.security.TokenHasher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,7 @@ public class CardService {
     private final AuditService auditService;
     private final FraudDetectionService fraudDetectionService;
     private final TokenHasher tokenHasher;
+    private final UserRepository userRepository;
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final String CARD_BIN = "453210"; // Visa-style test BIN
@@ -82,6 +84,10 @@ public class CardService {
 
         auditService.log(user, "CREATE_CARD", "AccountCard", card.getId(),
                 "Card created for account " + account.getAccountNumber() + ": " + masked);
+
+        notifyAdmins("Nouvelle carte client",
+                "Carte " + masked + " creee pour " + user.getFirstName() + " " + user.getLastName() +
+                        " sur le compte " + account.getAccountNumber() + ".");
 
         notificationService.send(user, "Carte bancaire creee avec succes",
                 "Votre carte bancaire a ete creee avec succes. Vous pouvez la recuperer a l'agence Amen Bank la plus proche " +
@@ -165,6 +171,12 @@ public class CardService {
             ref = "CRG-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         } while (transactionRepository.existsByReference(ref));
         return ref;
+    }
+
+    private void notifyAdmins(String title, String message) {
+        for (User admin : userRepository.findAllByRoleName("ADMIN")) {
+            notificationService.send(admin, title, message, Notification.NotificationType.CARD);
+        }
     }
 
     @Transactional

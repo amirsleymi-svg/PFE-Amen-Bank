@@ -1,4 +1,4 @@
-import { Component, input, signal, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, input, signal, ViewChild, ElementRef, AfterViewInit, OnInit } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { LogoComponent } from '../logo/logo.component';
@@ -8,6 +8,7 @@ export interface NavItem {
   label: string;
   route: string;
   icon: string;
+  children?: NavItem[];
 }
 
 @Component({
@@ -38,15 +39,40 @@ export interface NavItem {
       </div>
       <nav class="sidebar-nav" #scrollContainer (scroll)="onScroll($event)">
         @for (item of items(); track item.route) {
-          <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item" (click)="close()">
-            <span class="nav-icon">{{ item.icon }}</span>
-            <span class="nav-label">{{ item.label }}</span>
-            @if (getBadgeCount(item)) {
-              <span class="badge sidebar-badge" [class.red-glow]="isUrgent(item)">
-                {{ getBadgeCount(item) > 99 ? '99+' : getBadgeCount(item) }}
-              </span>
-            }
-          </a>
+          @if (item.children) {
+            <div class="nav-group">
+              <div class="nav-item group-header" (click)="toggleSubmenu(item.label)">
+                <span class="nav-icon">{{ item.icon }}</span>
+                <span class="nav-label">{{ item.label }}</span>
+                <span class="chevron" [class.rotated]="isExpanded(item.label)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </span>
+              </div>
+              <div class="submenu" [class.expanded]="isExpanded(item.label)">
+                @for (child of item.children; track child.route) {
+                  <a [routerLink]="child.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item submenu-item" (click)="onNavClick($event, child.route)">
+                    <span class="nav-icon small-icon">{{ child.icon }}</span>
+                    <span class="nav-label">{{ child.label }}</span>
+                    @if (getBadgeCount(child)) {
+                      <span class="badge sidebar-badge" [class.red-glow]="isUrgent(child)">
+                        {{ getBadgeCount(child) > 99 ? '99+' : getBadgeCount(child) }}
+                      </span>
+                    }
+                  </a>
+                }
+              </div>
+            </div>
+          } @else {
+            <a [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-item" (click)="onNavClick($event, item.route)">
+              <span class="nav-icon">{{ item.icon }}</span>
+              <span class="nav-label">{{ item.label }}</span>
+              @if (getBadgeCount(item)) {
+                <span class="badge sidebar-badge" [class.red-glow]="isUrgent(item)">
+                  {{ getBadgeCount(item) > 99 ? '99+' : getBadgeCount(item) }}
+                </span>
+              }
+            </a>
+          }
         }
       </nav>
       <div class="sidebar-footer">
@@ -96,6 +122,18 @@ export interface NavItem {
       font-size: 1.1rem;
     }
     .nav-label { font-size: 0.9rem; font-weight: 500; }
+    .chevron { margin-left: auto; transition: transform 0.3s; opacity: 0.5; }
+    .chevron.rotated { transform: rotate(180deg); }
+    .group-header { cursor: pointer; }
+    .submenu { 
+      max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding-left: 0.5rem;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .submenu.expanded { max-height: 500px; padding-bottom: 0.5rem; }
+    .submenu-item { font-size: 0.85rem !important; opacity: 0.8; }
+    .small-icon { font-size: 0.9rem !important; width: 28px !important; }
+
     .logout { cursor: pointer; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 0.5rem; padding-top: 1rem !important; }
     .logout:hover { color: var(--danger) !important; background: rgba(239, 68, 68, 0.05) !important; }
 
@@ -122,19 +160,20 @@ export interface NavItem {
 
     .sidebar-badge {
       margin-left: auto;
-      background: var(--gray-700);
+      background: rgba(255, 255, 255, 0.12);
       color: white;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 800;
-      padding: 2px 8px;
+      padding: 1px 7px;
       border-radius: 10px;
-      min-width: 24px;
+      min-width: 22px;
+      line-height: 18px;
       text-align: center;
       transition: all 0.3s;
     }
     .red-glow {
-      background: #ff4d4f;
-      box-shadow: 0 0 10px rgba(255, 77, 79, 0.5);
+      background: #e5484d;
+      box-shadow: 0 0 8px rgba(229, 72, 77, 0.42);
       animation: badge-pulse 2s infinite;
     }
     @keyframes badge-pulse {
@@ -144,12 +183,28 @@ export interface NavItem {
     }
   `]
 })
-export class SidebarComponent implements AfterViewInit {
+export class SidebarComponent implements OnInit, AfterViewInit {
   items = input<NavItem[]>([]);
   open = signal(false);
+  expandedMenus = signal<Set<string>>(new Set());
 
   static scrollPosition = 0;
   @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLElement>;
+
+  ngOnInit() {}
+
+  toggleSubmenu(label: string) {
+    this.expandedMenus.update(set => {
+      const newSet = new Set(set);
+      if (newSet.has(label)) newSet.delete(label);
+      else newSet.add(label);
+      return newSet;
+    });
+  }
+
+  isExpanded(label: string): boolean {
+    return this.expandedMenus().has(label);
+  }
 
   ngAfterViewInit() {
     if (this.scrollContainer?.nativeElement) {
@@ -170,7 +225,7 @@ export class SidebarComponent implements AfterViewInit {
     private router: Router,
     private wsService: NotificationWebsocketService
   ) {
-    this.router.events.subscribe(e => { if (e instanceof NavigationEnd) this.open.set(false); });
+    this.router.events.subscribe(e => { if (e instanceof NavigationEnd) this.closeMobileMenu(); });
     
     // Bind to BehaviorSubject - ADDED
     this.wsService.badgeCounts$.subscribe(counts => this.sidebarBadgeCounts.set(counts));
@@ -179,8 +234,33 @@ export class SidebarComponent implements AfterViewInit {
   toggle() { this.open.update(v => !v); }
   close() { this.open.set(false); }
 
+  onNavClick(event: MouseEvent, route: string) {
+    if (this.router.isActive(route, {
+      paths: 'exact',
+      queryParams: 'ignored',
+      fragment: 'ignored',
+      matrixParams: 'ignored',
+    })) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.closeMobileMenu();
+      return;
+    }
+    this.closeMobileMenu();
+  }
+
+  private closeMobileMenu() {
+    if (this.isMobileViewport()) {
+      this.open.set(false);
+    }
+  }
+
+  private isMobileViewport(): boolean {
+    return typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches;
+  }
+
   getBadgeCount(item: NavItem): number {
-    const label = item.label.toLowerCase();
+    const label = this.normalizeLabel(item.label);
     
     // Client-specific: Notifications badge
     if (label.includes('notification')) {
@@ -190,7 +270,7 @@ export class SidebarComponent implements AfterViewInit {
     const counts = this.sidebarBadgeCounts(); // IMPROVED
     if (label.includes('inscription')) return counts['inscriptions'] || 0;
     if (label.includes('virement')) return counts['virements'] || 0;
-    if (label.includes('crédit')) return counts['credits'] || 0;
+    if (label.includes('credit')) return counts['credits'] || 0;
     if (label.includes('rapport')) return counts['rapports'] || 0;
     if (label.includes('fraude')) return counts['fraudAlerts'] || 0;
     if (label.includes('connexion')) return counts['suspiciousConnections'] || 0;
@@ -200,8 +280,12 @@ export class SidebarComponent implements AfterViewInit {
   }
 
   isUrgent(item: NavItem): boolean {
-    const label = item.label.toLowerCase();
-    return label.includes('fraude') || label.includes('connexion') || label.includes('inscription');
+    const label = this.normalizeLabel(item.label);
+    return label.includes('fraude') || label.includes('connexion') || label.includes('inscription') || label.includes('audit');
+  }
+
+  private normalizeLabel(label: string): string {
+    return label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
   initials(): string {

@@ -3,9 +3,9 @@ import { DatePipe } from '@angular/common';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { CLIENT_NAV } from '../../../shared/nav-items';
 import { ApiService } from '../../../core/services/api.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { notificationTypeFr } from '../../../shared/display-labels';
 import { NotificationWebsocketService } from '../../../core/services/notification-websocket.service';
+import { Subscription } from 'rxjs';
 
 interface Notif {
   id: number;
@@ -17,6 +17,7 @@ interface Notif {
 }
 
 interface RealtimeNotifEvent {
+  id?: number;
   userId: number;
   title: string;
   message: string;
@@ -199,7 +200,7 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
   `]
 })
 export class ClientNotificationsComponent implements OnInit, OnDestroy {
-  private ws: WebSocket | null = null;
+  private realtimeSub?: Subscription;
 
   navItems = CLIENT_NAV;
   categories = CATEGORIES;
@@ -245,7 +246,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
     return this.items().filter(n => this.categorize(n) === cat).length;
   }
 
-  constructor(private api: ApiService, private auth: AuthService, private wsService: NotificationWebsocketService) {}
+  constructor(private api: ApiService, private wsService: NotificationWebsocketService) {}
 
   ngOnInit() {
     this.refresh();
@@ -253,10 +254,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+    this.realtimeSub?.unsubscribe();
   }
 
   refresh() {
@@ -281,7 +279,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
       next: () => {
         this.marking.set(false);
         this.items.update(list => list.map(x => x.id === n.id ? { ...x, isRead: true } : x));
-        this.wsService.unreadCount.update(c => Math.max(0, c - 1));
+        this.wsService.adjustUnreadCount(-1);
       },
       error: () => { this.marking.set(false); }
     });
@@ -294,7 +292,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
       next: () => {
         this.marking.set(false);
         this.items.update(list => list.map(x => ({ ...x, isRead: true })));
-        this.wsService.unreadCount.set(0);
+        this.wsService.setUnreadCount(0);
         this.showMsg('Toutes les notifications ont été marquées comme lues.');
       },
       error: () => {
@@ -313,7 +311,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
         const wasUnread = !n.isRead;
         this.items.update(list => list.filter(x => x.id !== n.id));
         if (wasUnread) {
-          this.wsService.unreadCount.update(c => Math.max(0, c - 1));
+          this.wsService.adjustUnreadCount(-1);
         }
         this.showMsg('Notification supprimée.');
       },
@@ -332,7 +330,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
       next: () => {
         this.marking.set(false);
         this.items.set([]);
-        this.wsService.unreadCount.set(0);
+        this.wsService.setUnreadCount(0);
         this.showMsg('Toutes les notifications ont été supprimées.');
       },
       error: () => {
@@ -365,26 +363,21 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
   }
 
   private connectRealtimeNotifications() {
-    const user = this.auth.user();
-    if (!user || user.role !== 'CLIENT') return;
-    const url = `wss://localhost:8443/ws/notifications?userId=${user.id}`;
-    this.ws = new WebSocket(url);
-    this.ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data) as RealtimeNotifEvent;
-        if (!payload || payload.userId !== user.id) return;
-        this.items.update(list => [{
-          id: -(Date.now()),
+    this.realtimeSub = this.wsService.notification$.subscribe((payload: RealtimeNotifEvent) => {
+      if (!payload) return;
+      const id = payload.id ?? -Date.now();
+      this.items.update(list => {
+        if (list.some(n => n.id === id)) return list;
+        return [{
+          id,
           title: payload.title,
           message: payload.message,
           type: payload.type,
           isRead: false,
           createdAt: payload.createdAt || new Date().toISOString()
-        }, ...list]);
-        this.showMsg("Nouvelle notification reçue");
-      } catch {
-        // Ignore malformed realtime payloads and keep page functional.
-      }
-    };
+        }, ...list];
+      });
+      this.showMsg("Nouvelle notification reçue");
+    });
   }
 }

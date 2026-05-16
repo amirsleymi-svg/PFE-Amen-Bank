@@ -146,8 +146,10 @@ public class TransferService {
             
             // Notify Employees to validate - ADDED
             userRepository.findAllByRoleName("EMPLOYEE").forEach(emp -> 
-                notificationService.sendInfo(emp, "Nouveau virement a valider", 
-                    "Un virement de " + request.getAmount() + " TND par " + user.getFirstName() + " attend votre validation.")
+                notificationService.send(emp, "Nouveau virement a valider",
+                    "Un virement de " + request.getAmount() + " TND par " + user.getFirstName() +
+                            " attend votre validation. Action attendue: valider ou rejeter.",
+                    Notification.NotificationType.TRANSFER)
             );
         }
         return mapToResponse(transaction);
@@ -233,8 +235,10 @@ public class TransferService {
             
             // Notify Employees to validate - ADDED
             userRepository.findAllByRoleName("EMPLOYEE").forEach(emp -> 
-                notificationService.sendInfo(emp, "Nouveau virement groupe a valider", 
-                    "Un virement groupe de " + totalAmount + " TND par " + user.getFirstName() + " attend votre validation.")
+                notificationService.send(emp, "Nouveau virement groupe a valider",
+                    "Un virement groupe de " + totalAmount + " TND par " + user.getFirstName() +
+                            " attend votre validation. Action attendue: valider ou rejeter.",
+                    Notification.NotificationType.TRANSFER)
             );
         }
         return mapToResponse(transaction);
@@ -314,8 +318,10 @@ public class TransferService {
             
             // Notify Employees to validate - ADDED
             userRepository.findAllByRoleName("EMPLOYEE").forEach(emp -> 
-                notificationService.sendInfo(emp, "Nouveau virement permanent a valider", 
-                    "Un virement permanent de " + request.getAmount() + " TND par " + user.getFirstName() + " attend votre validation.")
+                notificationService.send(emp, "Nouveau virement permanent a valider",
+                    "Un virement permanent de " + request.getAmount() + " TND par " + user.getFirstName() +
+                            " attend votre validation. Action attendue: valider ou rejeter.",
+                    Notification.NotificationType.TRANSFER)
             );
         }
         return mapToResponse(transaction);
@@ -375,8 +381,10 @@ public class TransferService {
         // Notify Administrator if amount > 1000 - ADDED
         if (transaction.getAmount().compareTo(new BigDecimal(1000)) > 0) {
             userRepository.findAllByRoleName("ADMIN").forEach(admin -> 
-                notificationService.sendInfo(admin, "Virement important valide", 
-                    "Un virement de " + transaction.getAmount() + " TND (ref: " + transaction.getReference() + ") a ete valide par " + approver.getFirstName())
+                notificationService.send(admin, "Virement important valide",
+                    "Un virement de " + transaction.getAmount() + " TND (ref: " + transaction.getReference() +
+                            ") a ete valide par " + approver.getFirstName() + ".",
+                    Notification.NotificationType.TRANSFER)
             );
             
             // If approver is ADMIN, notify all 3 roles - ADDED

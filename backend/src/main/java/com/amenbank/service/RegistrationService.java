@@ -55,6 +55,9 @@ public class RegistrationService {
                 .phone(dto.getPhone())
                 .build();
         registrationRequestRepository.save(request);
+        auditService.log(null, "SUBMIT_REGISTRATION_REQUEST", "RegistrationRequest", request.getId(),
+                "New registration request for " + dto.getEmail());
+        notifyAdminsNewRegistration(request);
         notificationWebSocketHandler.broadcastBadgeRefresh();
     }
 
@@ -196,6 +199,14 @@ public class RegistrationService {
             iban = "TN59" + String.format("%020d", (long)(Math.random() * 99999999999999999L));
         } while (bankAccountRepository.existsByIban(iban));
         return iban;
+    }
+
+    private void notifyAdminsNewRegistration(RegistrationRequest request) {
+        String msg = "Nouvelle inscription de " + request.getFirstName() + " " + request.getLastName() +
+                " (" + request.getEmail() + "). Action attendue: traiter la demande.";
+        for (User admin : userRepository.findAllByRoleName("ADMIN")) {
+            notificationService.send(admin, "Nouvelle inscription a traiter", msg, Notification.NotificationType.INFO);
+        }
     }
 
     private RegistrationRequestResponse mapToResponse(RegistrationRequest r) {

@@ -21,6 +21,7 @@ public class BadgeController {
     private final BadgeService badgeService;
     private final UserRepository userRepository;
     private final com.amenbank.repository.AuditLogRepository auditLogRepository;
+    private final com.amenbank.notification.NotificationWebSocketHandler notificationWebSocketHandler;
 
     @GetMapping("/counts")
     public ResponseEntity<ApiResponse<BadgeResponse>> getBadgeCounts(@AuthenticationPrincipal UserDetailsImpl auth) {
@@ -34,6 +35,7 @@ public class BadgeController {
     @org.springframework.web.bind.annotation.PostMapping("/mark-seen")
     public ResponseEntity<ApiResponse<Void>> markAllSeen() {
         auditLogRepository.markAllAsRead();
+        notificationWebSocketHandler.broadcastBadgeRefresh();
         return ResponseEntity.ok(ApiResponse.success("All logs marked as seen"));
     }
 }

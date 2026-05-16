@@ -25,6 +25,7 @@ public class NotificationService {
                 .build();
         Notification saved = notificationRepository.save(notification);
         notificationWebSocketHandler.sendToUser(user.getId(), NotificationRealtimeEvent.builder()
+                .id(saved.getId())
                 .userId(user.getId())
                 .title(saved.getTitle())
                 .message(saved.getMessage())

@@ -11,6 +11,7 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'Terminé',
   REJECTED: 'Rejeté',
   FAILED: 'Échoué',
+  CANCELLED: 'Annulé',
   DISBURSED: 'Déboursé',
   SUBMITTED: 'Soumis',
   REVIEWED: 'Examiné',
@@ -25,6 +26,10 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   TRANSFER_SIMPLE: 'Virement simple',
   TRANSFER_GROUPED: 'Virement groupé',
   TRANSFER_PERMANENT: 'Virement permanent',
+  CREDIT_DISBURSEMENT: 'Crédit versé',
+  CREDIT_REPAYMENT: 'Remboursement crédit',
+  CARD_RECHARGE: 'Recharge carte',
+  CARD_LINKING: 'Carte liée',
   ACCOUNT_TO_CARD: 'Compte vers carte',
   CARD_TO_ACCOUNT: 'Carte vers compte',
 };

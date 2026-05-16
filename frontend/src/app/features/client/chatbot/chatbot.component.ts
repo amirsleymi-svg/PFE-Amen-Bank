@@ -21,60 +21,27 @@ import { DatePipe } from '@angular/common';
               <h1 class="outfit">Assistant Amen Bank</h1>
               <div class="chat-status" [class.online]="!error()">
                 <div class="status-dot"></div>
-                <span class="outfit size-xs uppercase font-bold">{{ error() ? 'Hors ligne' : 'Système Opérationnel' }}</span>
+                <span class="outfit size-xs uppercase font-bold">{{ error() ? 'Hors ligne' : 'Disponible' }}</span>
               </div>
             </div>
           </div>
         </div>
 
         <div class="chat-main-layout">
-          <!-- Sessions Sidebar -->
-          <div class="conv-sidebar">
-            <button class="btn btn-accent btn-block outfit mb-1-5" (click)="newConversation()">
-              + NOUVELLE SESSION
-            </button>
-            <div class="conv-list-premium">
-              @for (conv of conversations(); track conv.id) {
-                <div class="conv-entry animate-in" [class.active]="activeConvId() === conv.id" (click)="selectConversation(conv.id)">
-                  <div class="conv-info">
-                    <div class="conv-name outfit">{{ conv.title }}</div>
-                    <div class="conv-time outfit">{{ conv.updated_at | date:'dd MMM, HH:mm' }}</div>
-                  </div>
-                  <button class="conv-action-btn" (click)="deleteConversation(conv.id, $event)">✕</button>
-                </div>
-              } @empty {
-                <div class="empty-sessions outfit">Aucun historique de session</div>
-              }
-            </div>
-          </div>
-
-          <!-- Chat Engine -->
           <div class="chat-engine">
             <div class="messages-scroll" #messagesList>
               @if (messages().length === 0 && !loading()) {
                 <div class="welcome-view animate-in">
-                  <div class="welcome-logo">🛡️</div>
-                  <h2 class="outfit">Intelligence Bancaire Active</h2>
-                  <p class="outfit color-gray-400">Je suis votre expert digital Amen Bank. Comment puis-je assister vos opérations aujourd'hui ?</p>
-                  
-                  <div class="suggestions-matrix mt-2">
-                    @for (s of suggestions; track s.text) {
-                      <button class="suggestion-tile" (click)="sendSuggestion(s.text)">
-                        <span class="tile-icon">{{ s.icon }}</span>
-                        <div class="tile-text">
-                          <span class="tile-label outfit">{{ s.label }}</span>
-                          <span class="tile-desc outfit">{{ s.text }}</span>
-                        </div>
-                      </button>
-                    }
-                  </div>
+                  <div class="welcome-logo">🏦</div>
+                  <h2 class="outfit">Amen Bank Assistant</h2>
+                  <p class="outfit color-gray-400">Posez une question sur vos comptes, transactions ou services Amen Bank.</p>
                 </div>
               }
               
               <div class="message-feed">
                 @for (msg of messages(); track msg.id) {
                   <div class="msg-row" [class.user]="msg.role === 'user'">
-                    <div class="msg-bubble" [class.assistant]="msg.role === 'assistant'">
+                    <div class="msg-bubble" [class.assistant]="msg.role === 'assistant'" [class.user]="msg.role === 'user'">
                       <div class="msg-text outfit">{{ msg.content }}</div>
                       <div class="msg-meta outfit">{{ msg.created_at | date:'HH:mm' }}</div>
                     </div>
@@ -94,9 +61,9 @@ import { DatePipe } from '@angular/common';
 
             <div class="chat-input-container">
               @if (error()) { <div class="alert alert-error mb-1 outfit size-xs">{{ error() }}</div> }
-              <form (ngSubmit)="sendMessage()" class="premium-chat-form">
+              <form (ngSubmit)="sendMessage()" class="premium-chat-form shadow-premium">
                 <input type="text" [(ngModel)]="userInput" name="msg" 
-                       placeholder="Posez une question sur vos comptes, virements ou crédits..." 
+                       placeholder="Écrivez votre message ici..." 
                        [disabled]="loading()" autocomplete="off" class="outfit">
                 <button type="submit" class="btn-send-bot" [disabled]="loading() || !userInput.trim()">
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
@@ -130,16 +97,12 @@ import { DatePipe } from '@angular/common';
     .empty-sessions { text-align: center; color: var(--gray-400); padding: 3rem 1rem; font-size: 0.8rem; }
 
     .chat-engine { flex: 1; display: flex; flex-direction: column; background: white; position: relative; }
-    .messages-scroll { flex: 1; overflow-y: auto; padding: 2rem 4rem; }
-    
-    .welcome-view { text-align: center; padding: 3rem 0; max-width: 800px; margin: 0 auto; }
-    .welcome-logo { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.5; }
-    .suggestions-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; }
-    .suggestion-tile { display: flex; gap: 1rem; padding: 1.25rem; border: 1px solid var(--gray-100); border-radius: 16px; background: white; cursor: pointer; transition: all 0.05s; text-align: left; }
-    .suggestion-tile:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow); }
-    .tile-icon { font-size: 1.5rem; }
-    .tile-label { display: block; font-weight: 800; font-size: 0.8rem; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
-    .tile-desc { display: block; font-size: 0.75rem; color: var(--gray-400); margin-top: 2px; }
+    .messages-scroll { flex: 1; overflow-y: auto; padding: 2rem 2.5rem; }
+    .welcome-view { min-height: 55vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .welcome-logo { width: 64px; height: 64px; border-radius: 16px; background: var(--gray-50); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 1rem; }
+    .welcome-view h2 { color: var(--primary); margin-bottom: 0.5rem; }
+    .welcome-view p { max-width: 420px; }
+    .message-feed { display: flex; flex-direction: column; gap: 1.5rem; max-width: 900px; margin: 0 auto; }
 
     .message-feed { display: flex; flex-direction: column; gap: 1.5rem; }
     .msg-row { display: flex; width: 100%; }
@@ -162,6 +125,12 @@ import { DatePipe } from '@angular/common';
     .btn-send-bot { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--primary); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.05s; }
     .btn-send-bot:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     .btn-send-bot:disabled { opacity: 0.3; cursor: not-allowed; }
+    @media (max-width: 700px) {
+      .chat-header { padding: 1rem; }
+      .messages-scroll { padding: 1rem; }
+      .chat-input-container { padding: 1rem; }
+      .msg-bubble { max-width: 88%; padding: 1rem; }
+    }
   `]
 })
 export class ChatbotComponent implements OnInit, AfterViewChecked {
@@ -175,21 +144,6 @@ export class ChatbotComponent implements OnInit, AfterViewChecked {
   error = signal('');
   userInput = '';
   private shouldScroll = false;
-
-  suggestions = [
-    { icon: '💰', label: 'Mon solde', text: 'Quel est le solde de mon compte et ma carte ?' },
-    { icon: '💸', label: 'Virement simple', text: 'Comment faire un virement simple étape par étape ?' },
-    { icon: '👥', label: 'Virement groupé', text: 'Comment envoyer de l\'argent à plusieurs personnes ?' },
-    { icon: '🔄', label: 'Virement permanent', text: 'Comment configurer un virement automatique récurrent ?' },
-    { icon: '📊', label: 'Crédit', text: 'Je veux simuler un crédit, quels sont les taux et conditions ?' },
-    { icon: '💳', label: 'Ma carte', text: 'Comment fonctionne ma carte et les virements carte/compte ?' },
-    { icon: '📋', label: 'Mes opérations', text: 'Résume mes dernières transactions et virements en attente' },
-    { icon: '🔔', label: 'Notifications', text: 'Est-ce que j\'ai des notifications non lues ?' },
-    { icon: '🏦', label: 'Agences', text: 'Quels sont les horaires et le contact du service client ?' },
-    { icon: '🔒', label: 'Sécurité', text: 'Comment mon compte est-il protégé contre la fraude ?' },
-    { icon: '📱', label: 'Services', text: 'Quels sont tous les services disponibles dans l\'application ?' },
-    { icon: '❓', label: 'Aide', text: 'Mon compte ou ma carte est désactivé, que faire ?' },
-  ];
 
   constructor(private api: ApiService) {}
 

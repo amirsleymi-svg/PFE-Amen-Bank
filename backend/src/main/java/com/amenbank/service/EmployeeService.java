@@ -32,6 +32,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -300,12 +301,39 @@ public class EmployeeService {
         account.setBalance(account.getBalance().add(amount));
         bankAccountRepository.save(account);
 
-        notificationService.sendSuccess(client, "Augmentation de solde",
-                "votre solde a augmenté avec succes");
+        Transaction deposit = Transaction.builder()
+                .reference(generateDepositReference())
+                .type(Transaction.TransactionType.CREDIT_DISBURSEMENT)
+                .status(Transaction.TransactionStatus.EXECUTED)
+                .amount(amount)
+                .destinationAccount(account)
+                .descriptionText("Depot a crediter par employe")
+                .initiatedBy(employee)
+                .approvedBy(employee)
+                .executedAt(LocalDateTime.now())
+                .build();
+        transactionRepository.save(deposit);
 
-        auditService.log(employee, "INCREASE_BALANCE", "BankAccount", accountId,
-                "Increased balance by " + amount + " TND for account " + account.getAccountNumber());
+        notificationService.sendSuccess(client, "Depot credite",
+                "Un depot de " + amount + " TND a ete credite sur votre compte " +
+                        account.getAccountNumber() + ". Nouveau solde: " + account.getBalance() + " TND.");
+
+        auditService.log(employee, "INCREASE_BALANCE", "Transaction", deposit.getId(),
+                "Depot a crediter de " + amount + " TND pour le compte " + account.getAccountNumber() +
+                        " (client " + client.getFirstName() + " " + client.getLastName() +
+                        ", transaction " + deposit.getReference() + ")");
+        notifyAdminsDeposit(employee, client, account, amount, deposit);
         notificationWebSocketHandler.broadcastBadgeRefresh();
+    }
+
+    private void notifyAdminsDeposit(User employee, User client, BankAccount account, BigDecimal amount, Transaction deposit) {
+        String msg = "Depot a crediter de " + amount + " TND effectue par " +
+                employee.getFirstName() + " " + employee.getLastName() + " au profit de " +
+                client.getFirstName() + " " + client.getLastName() + " sur le compte " +
+                account.getAccountNumber() + " (transaction " + deposit.getReference() + ").";
+        for (User admin : userRepository.findAllByRoleName("ADMIN")) {
+            notificationService.send(admin, "Depot client credite", msg, Notification.NotificationType.CREDIT);
+        }
     }
 
     private DailyReportResponse mapToResponse(DailyReport r) {
@@ -321,5 +349,13 @@ public class EmployeeService {
                 .rating(r.getRating())
                 .createdAt(r.getCreatedAt())
                 .build();
+    }
+
+    private String generateDepositReference() {
+        String ref;
+        do {
+            ref = "DEP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        } while (transactionRepository.existsByReference(ref));
+        return ref;
     }
 }
