@@ -127,12 +127,27 @@ export interface NavItem {
     .group-header { cursor: pointer; }
     .submenu { 
       max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      padding-left: 0.5rem;
-      display: flex; flex-direction: column; gap: 2px;
+      padding-left: 0;
+      display: flex; flex-direction: column;
     }
-    .submenu.expanded { max-height: 500px; padding-bottom: 0.5rem; }
-    .submenu-item { font-size: 0.85rem !important; opacity: 0.8; }
-    .small-icon { font-size: 0.9rem !important; width: 28px !important; }
+    .submenu.expanded { max-height: 800px; padding-bottom: 0.5rem; }
+    .submenu-item { 
+      font-size: 0.85rem !important; 
+      opacity: 0.8; 
+      padding-left: 3rem !important;
+      margin: 0 0.5rem !important;
+    }
+    .submenu-item.active {
+      background: rgba(255, 255, 255, 0.1) !important;
+      box-shadow: none !important;
+      color: var(--accent) !important;
+      opacity: 1;
+    }
+    .submenu-item:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+    .small-icon { font-size: 0.95rem !important; width: 24px !important; margin-left: -0.25rem; }
 
     .logout { cursor: pointer; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 0.5rem; padding-top: 1rem !important; }
     .logout:hover { color: var(--danger) !important; background: rgba(239, 68, 68, 0.05) !important; }
@@ -218,7 +233,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     SidebarComponent.scrollPosition = (event.target as HTMLElement).scrollTop;
   }
 
-  sidebarBadgeCounts = signal<{ [key: string]: number }>({}); // ADDED
+  sidebarBadgeCounts = signal<{ [key: string]: number }>({}); 
   
   constructor(
     public auth: AuthService,
@@ -227,7 +242,6 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   ) {
     this.router.events.subscribe(e => { if (e instanceof NavigationEnd) this.closeMobileMenu(); });
     
-    // Bind to BehaviorSubject - ADDED
     this.wsService.badgeCounts$.subscribe(counts => this.sidebarBadgeCounts.set(counts));
   }
 
@@ -262,12 +276,11 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   getBadgeCount(item: NavItem): number {
     const label = this.normalizeLabel(item.label);
     
-    // Client-specific: Notifications badge
     if (label.includes('notification')) {
       return this.wsService.unreadCount();
     }
 
-    const counts = this.sidebarBadgeCounts(); // IMPROVED
+    const counts = this.sidebarBadgeCounts(); 
     if (label.includes('inscription')) return counts['inscriptions'] || 0;
     if (label.includes('virement')) return counts['virements'] || 0;
     if (label.includes('credit')) return counts['credits'] || 0;

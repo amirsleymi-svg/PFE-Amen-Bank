@@ -81,18 +81,18 @@ import { securityActionFr, statusFr } from '../../../shared/display-labels';
                     <td><code>{{ s.lastIp || '—' }}</code></td>
                     <td>
                       @if (s.userId && s.status !== 'DISABLED') {
-                        <button class="btn btn-danger btn-sm" (click)="block(s)" [disabled]="blocking() === s.userId">
+                        <button class="btn btn-danger btn-sm btn-premium-danger" (click)="block(s)" [disabled]="blocking() === s.userId">
                           {{ blocking() === s.userId ? 'Blocage...' : '🛑 Bloquer' }}
                         </button>
                       } @else if (s.status === 'DISABLED') {
-                        <span class="muted">Déjà bloqué</span>
+                        <span class="status-chip chip-disabled">Déjà bloqué</span>
                       } @else if (s.status === 'ANONYMOUS') {
                         @if (s.lastIp && !isIpBlocked(s.lastIp)) {
-                          <button class="btn btn-danger btn-sm" (click)="blockIpFromSuspect(s)" [disabled]="blockingIp() === s.lastIp">
+                          <button class="btn btn-danger btn-sm btn-premium-danger" (click)="blockIpFromSuspect(s)" [disabled]="blockingIp() === s.lastIp">
                             {{ blockingIp() === s.lastIp ? 'Blocage...' : '🛑 Bloquer IP' }}
                           </button>
                         } @else if (s.lastIp && isIpBlocked(s.lastIp)) {
-                          <span class="muted">IP déjà bloquée</span>
+                          <span class="status-chip chip-disabled">IP bloquée</span>
                         } @else {
                           <span class="muted">IP inconnue</span>
                         }
@@ -230,18 +230,33 @@ import { securityActionFr, statusFr } from '../../../shared/display-labels';
     .details-cell { max-width:380px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.82rem; color:#4b5563; }
     code { font-family:monospace; font-size:0.8rem; background:#f3f4f6; padding:0.05rem 0.35rem; border-radius:4px; color:#374151; }
 
-    .btn-sm { padding:0.35rem 0.7rem; font-size:0.78rem; }
-    .btn-danger { background:#dc2626; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; }
-    .btn-danger:hover:not(:disabled) { background:#b91c1c; }
-    .btn-danger:disabled { opacity:0.55; cursor:not-allowed; }
-    .btn-secondary { background:#f3f4f6; color:#374151; border:1px solid #d1d5db; border-radius:6px; cursor:pointer; font-weight:600; padding:0.35rem 0.7rem; font-size:0.78rem; }
-    .btn-secondary:hover:not(:disabled) { background:#e5e7eb; }
-    .btn-secondary:disabled { opacity:0.55; cursor:not-allowed; }
+    .btn-sm { padding:0.4rem 0.8rem; font-size:0.75rem; }
+    .btn-danger { background:var(--danger); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition: all 0.2s; }
+    .btn-premium-danger { 
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+    }
+    .btn-premium-danger:hover:not(:disabled) { 
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+      background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    }
+    .btn-danger:disabled { opacity:0.5; cursor:not-allowed; }
+    
+    .status-chip {
+      font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 6px;
+      text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .chip-disabled { background: #f3f4f6; color: #6b7280; }
 
-    .ip-form { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; }
-    .ip-form input { padding:0.4rem 0.6rem; border:1px solid #d1d5db; border-radius:6px; font-size:0.85rem; }
-    .ip-form input[name="newIp"] { width:180px; font-family:monospace; }
-    .ip-form input[name="newIpReason"] { width:220px; }
+    .btn-secondary { background:#fff; color:#374151; border:1px solid #d1d5db; border-radius:8px; cursor:pointer; font-weight:600; padding:0.4rem 0.8rem; font-size:0.75rem; transition: all 0.2s; }
+    .btn-secondary:hover:not(:disabled) { background:#f9fafb; border-color: #9ca3af; }
+    
+    .ip-form { display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; background: #f9fafb; padding: 0.5rem; border-radius: 10px; border: 1px solid #e5e7eb; }
+    .ip-form input { padding:0.5rem 0.75rem; border:1px solid #d1d5db; border-radius:8px; font-size:0.85rem; outline: none; }
+    .ip-form input:focus { border-color: var(--accent); ring: 2px solid var(--accent-light); }
+    .ip-form input[name="newIp"] { width:160px; font-family:monospace; }
+    .ip-form input[name="newIpReason"] { width:200px; }
   `]
 })
 export class AdminSecurityComponent implements OnInit {

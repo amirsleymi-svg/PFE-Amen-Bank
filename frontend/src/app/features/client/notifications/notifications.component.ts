@@ -25,7 +25,7 @@ interface RealtimeNotifEvent {
   createdAt: string;
 }
 
-type Category = 'all' | 'virement' | 'credit' | 'compte' | 'solde' | 'autre';
+type Category = 'all' | 'virement' | 'credit' | 'compte' | 'solde' | 'email' | 'autre';
 type ReadFilter = 'all' | 'unread';
 
 const CATEGORIES: { key: Category; label: string; icon: string }[] = [
@@ -34,6 +34,7 @@ const CATEGORIES: { key: Category; label: string; icon: string }[] = [
   { key: 'credit',   label: 'Crédits',     icon: '💰' },
   { key: 'compte',   label: 'Compte',      icon: '🏦' },
   { key: 'solde',    label: 'Solde',       icon: '💵' },
+  { key: 'email',    label: 'Service Email', icon: '📧' },
   { key: 'autre',    label: 'Autres',      icon: '📋' },
 ];
 
@@ -234,6 +235,7 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
 
   categorize(n: Notif): Category {
     const text = ((n.title || '') + ' ' + (n.message || '')).toLowerCase();
+    if (/(code.*verification|otp|email|reinitialisation|activation|identifiant)/.test(text)) return 'email';
     if (/(virement|transfer|destinataire|recu|beneficiaire)/.test(text)) return 'virement';
     if (/(credit|pret|mensualite)/.test(text)) return 'credit';
     if (/(solde|credite|depot|augmente)/.test(text)) return 'solde';
@@ -341,11 +343,9 @@ export class ClientNotificationsComponent implements OnInit, OnDestroy {
   }
 
   viewDetails(n: Notif) {
-    // Simply mark as read if it wasn't, and show a message or redirect if applicable
     if (!n.isRead) {
       this.markRead(n);
     }
-    // For now, we stay on the same page but could redirect to account, credit etc.
     this.showMsg(`Détails: ${n.title}`);
   }
 

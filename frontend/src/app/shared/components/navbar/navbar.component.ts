@@ -39,10 +39,13 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
                   <div class="notif-empty outfit">Aucune {{ isClient() ? 'notification' : 'alerte' }}</div>
                 } @else {
                   @for (n of notifications(); track n.id) {
-                    <div class="notif-item" [class.unread]="!n.isRead" [class.staff-alert]="isStaff()" (click)="acknowledgeNotif(n)">
+                    <div class="notif-item" [class.unread]="!n.isRead" [class.staff-alert]="isStaff()" [class.email-notif]="isEmailService(n)" (click)="acknowledgeNotif(n)">
                       <div class="notif-dot" [class]="'priority-' + priorityClass(n)"></div>
                       <div class="notif-main">
-                        <div class="notif-title outfit">{{ n.title }}</div>
+                        <div class="notif-title outfit">
+                          {{ n.title }}
+                          @if (isEmailService(n)) { <span class="service-tag">Email Service</span> }
+                        </div>
                         <div class="notif-msg outfit">{{ n.message }}</div>
                         <div class="notif-time outfit">{{ n.createdAt | date:'shortTime' }}</div>
                       </div>
@@ -154,20 +157,20 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
     .notif-item:hover { background: var(--gray-50); }
     .notif-item.unread { background: rgba(0, 61, 110, 0.02); }
     .notif-item.staff-alert.unread { background: rgba(239, 68, 68, 0.035); }
+    .notif-item.email-notif.unread { background: rgba(197, 160, 89, 0.04); }
     .notif-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; background: var(--gray-300); }
     .notif-dot.priority-high { background: var(--danger); box-shadow: 0 0 5px var(--danger); }
     .notif-dot.priority-critical { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-light); }
     .notif-dot.priority-normal { background: var(--accent); }
+    .notif-dot.priority-email { background: var(--accent); }
     .notif-main { flex: 1; min-width: 0; }
-    .notif-title { font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 2px; }
+    .notif-title { font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between; }
+    .service-tag { font-size: 0.6rem; background: var(--primary); color: var(--accent); padding: 1px 4px; border-radius: 4px; font-weight: 800; text-transform: uppercase; }
     .notif-msg { font-size: 0.8rem; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .notif-time { font-size: 0.7rem; color: var(--gray-400); margin-top: 4px; }
     .dropdown-footer { padding: 0.75rem; text-align: center; border-top: 1px solid var(--gray-50); }
     .dropdown-footer a { color: var(--primary); font-size: 0.8rem; font-weight: 700; text-decoration: none; }
     .staff-footer { color: var(--gray-500); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-    .dropdown-overlay { position: fixed; inset: 0; z-index: 100; }
-
-    .nav-divider { width: 1px; height: 24px; background: var(--gray-200); margin: 0 1rem; }
     .user-pill {
       display: flex; align-items: center; gap: 0.75rem;
       padding: 0.4rem 0.4rem 0.4rem 1rem;
@@ -252,7 +255,8 @@ export class NavbarComponent implements OnInit {
     this.showDropdown.set(false);
   }
 
-  priorityClass(n: any): 'normal' | 'high' | 'critical' {
+  priorityClass(n: any): 'normal' | 'high' | 'critical' | 'email' {
+    if (this.isEmailService(n)) return 'email';
     const text = `${n?.type || ''} ${n?.title || ''} ${n?.message || ''}`.toUpperCase();
     if (text.includes('CRITICAL') || text.includes('FRAUD') || text.includes('GELER') || text.includes('BLOQUE')) {
       return 'critical';
@@ -261,5 +265,10 @@ export class NavbarComponent implements OnInit {
       return 'high';
     }
     return 'normal';
+  }
+
+  isEmailService(n: any): boolean {
+    const text = `${n?.title || ''} ${n?.message || ''}`.toLowerCase();
+    return /(code.*verification|otp|email|reinitialisation|activation|identifiant)/.test(text);
   }
 }
