@@ -47,7 +47,7 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
             <div class="stat-footer outfit">Flux validés</div>
           </div>
           <div class="stat-card warning-surface">
-            <span class="stat-label outfit">Alertes Sécurité</span>
+            <span class="stat-label outfit">Alertes & supervision</span>
             <div class="stat-value outfit text-warning">{{ counts().fraud + counts().disable }}</div>
             <div class="stat-footer outfit">Fraude & Suspensions</div>
           </div>
@@ -68,7 +68,7 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
               <option value="">Toutes Catégories</option>
               <option value="approve">Approbations</option>
               <option value="reject">Rejets</option>
-              <option value="fraud">Alertes Fraude</option>
+              <option value="fraud">Alertes & supervision</option>
               <option value="login">Authentification</option>
             </select>
             <select class="premium-select outfit" [ngModel]="entityFilter()" (ngModelChange)="entityFilter.set($event)">
@@ -179,7 +179,7 @@ type ActionCategory = 'approve' | 'reject' | 'create' | 'delete' | 'disable' | '
     .accent-gradient .stat-label { color: var(--accent); }
     .accent-gradient .stat-value, .accent-gradient .stat-footer { color: white; }
 
-    .forensic-filters { display: flex; align-items: center; gap: 1rem; background: white; padding: 1rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--gray-100); }
+    .forensic-filters { display: center; align-items: center; gap: 1rem; background: white; padding: 1rem 1.5rem; border-radius: var(--radius); border: 1px solid var(--gray-100); }
     .search-wrapper { flex: 1; }
     .premium-input { width: 100%; border: 1px solid var(--gray-100); padding: 0.75rem 1.25rem; border-radius: var(--radius-sm); background: var(--gray-50); }
     .select-group { display: flex; gap: 0.5rem; }

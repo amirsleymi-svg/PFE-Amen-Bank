@@ -4,7 +4,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { NotificationWebsocketService } from '../../../core/services/notification-websocket.service';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Notification } from '../../../core/models/api.models'; // ADDED
+import { Notification } from '../../../core/models/api.models';
 
 @Component({
   selector: 'app-navbar',
@@ -17,8 +17,15 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
       </div>
       <div class="nav-right">
         <div class="notification-wrapper">
-          <button class="notif-btn" (click)="toggleDropdown()" [class.has-unread]="unreadCount() > 0" [attr.aria-label]="isClient() ? 'Notifications' : 'Alertes prioritaires'">
-            <span class="bell-icon">🔔</span>
+          <button class="notif-btn" (click)="toggleDropdown()" [class.has-unread]="unreadCount() > 0" [attr.aria-label]="getAriaLabel()">
+            <span class="bell-icon">
+              @if (isClient()) { 🔔 }
+              @else {
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-top: -4px;">
+                  <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                </svg>
+              }
+            </span>
             @if (unreadCount() > 0) {
               <span class="badge pulse-animation">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
             }
@@ -27,10 +34,15 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
           @if (showDropdown()) {
             <div class="notif-dropdown animate-in shadow-premium" [class.alert-mode]="isStaff()">
               <div class="dropdown-header">
-                <h3 class="outfit">{{ isClient() ? 'Notifications client' : 'Alertes prioritaires' }}</h3>
-                <button class="mark-all-btn outfit" (click)="markAllRead()" [disabled]="unreadCount() === 0">
-                  Tout marquer lu
-                </button>
+                <h3 class="outfit">{{ getNotifTitle() }}</h3>
+                <div class="header-actions">
+                  <button class="mark-all-btn outfit" (click)="markAllRead()" [disabled]="unreadCount() === 0">
+                    Tout marquer lu
+                  </button>
+                  <button class="clear-all-btn outfit" (click)="deleteAll()" [disabled]="notifications().length === 0">
+                    Nettoyer tout
+                  </button>
+                </div>
               </div>
               <div class="dropdown-body">
                 @if (loading()) {
@@ -49,6 +61,9 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
                         <div class="notif-msg outfit">{{ n.message }}</div>
                         <div class="notif-time outfit">{{ n.createdAt | date:'shortTime' }}</div>
                       </div>
+                      <button class="delete-notif-btn" (click)="deleteNotif($event, n.id)" title="Supprimer uniquement cette notification">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                      </button>
                     </div>
                   }
                 }
@@ -144,7 +159,12 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
       align-items: center;
     }
     .dropdown-header h3 { font-size: 1rem; margin: 0; }
-    .mark-all-btn { background: none; border: none; color: var(--accent); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+    .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+    .mark-all-btn, .clear-all-btn { background: none; border: none; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+    .mark-all-btn { color: var(--accent); }
+    .clear-all-btn { color: var(--danger); opacity: 0.8; }
+    .mark-all-btn:hover, .clear-all-btn:hover { opacity: 1; text-decoration: underline; }
+    .mark-all-btn:disabled, .clear-all-btn:disabled { opacity: 0.3; cursor: not-allowed; text-decoration: none; }
     .dropdown-body { max-height: 400px; overflow-y: auto; }
     .notif-item {
       padding: 1rem 1.5rem;
@@ -153,6 +173,31 @@ import { Notification } from '../../../core/models/api.models'; // ADDED
       gap: 1rem;
       cursor: pointer;
       transition: background 0.2s;
+      position: relative;
+    }
+    .notif-item:hover .delete-notif-btn { opacity: 1; }
+    .delete-notif-btn {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      color: var(--gray-400);
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.5;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .delete-notif-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+      opacity: 1;
     }
     .notif-item:hover { background: var(--gray-50); }
     .notif-item.unread { background: rgba(0, 61, 110, 0.02); }
@@ -204,13 +249,29 @@ export class NavbarComponent implements OnInit {
 
   isClient() { return this.auth.user()?.role === 'CLIENT'; }
   isStaff() { return this.auth.user()?.role === 'ADMIN' || this.auth.user()?.role === 'EMPLOYEE'; }
+  
   initials() { 
     const u = this.auth.user();
     return u ? (u.firstName[0] + u.lastName[0]).toUpperCase() : '';
   }
+
   getPageTitle() {
     const role = this.auth.user()?.role;
     return role === 'ADMIN' ? 'Espace Admin' : role === 'EMPLOYEE' ? 'Espace Employé' : 'Amen Bank';
+  }
+
+  getNotifTitle() {
+    const role = this.auth.user()?.role;
+    if (role === 'ADMIN') return 'Alertes & supervision';
+    if (role === 'EMPLOYEE') return 'Demandes en attente';
+    return 'Notifications client';
+  }
+
+  getAriaLabel() {
+    const role = this.auth.user()?.role;
+    if (role === 'ADMIN') return 'Alertes & supervision';
+    if (role === 'EMPLOYEE') return 'Demandes en attente';
+    return 'Notifications';
   }
 
   ngOnInit() {
@@ -253,6 +314,26 @@ export class NavbarComponent implements OnInit {
       });
     }
     this.showDropdown.set(false);
+  }
+
+  deleteNotif(event: MouseEvent, id: number) {
+    event.stopPropagation();
+    const notif = this.notifications().find(n => n.id === id);
+    this.api.deleteNotification(id).subscribe(() => {
+      if (notif && !notif.isRead) {
+        this.wsService.adjustUnreadCount(-1);
+      }
+      this.notifications.update(list => list.filter(n => n.id !== id));
+    });
+  }
+
+  deleteAll() {
+    if (confirm('Voulez-vous vraiment supprimer définitivement ces notifications du centre de notifications ? (Le contenu associé ne sera pas impacté)')) {
+      this.api.deleteAllNotifications().subscribe(() => {
+        this.wsService.setUnreadCount(0);
+        this.notifications.set([]);
+      });
+    }
   }
 
   priorityClass(n: any): 'normal' | 'high' | 'critical' | 'email' {

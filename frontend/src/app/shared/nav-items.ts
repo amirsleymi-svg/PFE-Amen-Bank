@@ -62,7 +62,7 @@ export const ADMIN_NAV: NavItem[] = [
     route: '/admin/security-system',
     children: [
       { label: 'Comptes Bancaires', route: '/admin/bank-accounts', icon: '🏦' },
-      { label: 'Alertes Fraude', route: '/admin/security-system/fraud-alerts', icon: '🚨' },
+      { label: 'Alertes & supervision', route: '/admin/security-system/fraud-alerts', icon: '🚨' },
       { label: 'Sécurité', route: '/admin/security-system/security', icon: '🔒' },
     ]
   },

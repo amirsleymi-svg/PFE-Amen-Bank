@@ -43,7 +43,7 @@ import { auditActionFr, entityTypeFr } from '../../../shared/display-labels';
                 <div class="stat-value-sm outfit">{{ stats()?.totalUsers ?? '-' }}</div>
               </div>
               <div class="stat-card glass-style">
-                <div class="stat-label outfit">Alertes Fraude</div>
+                <div class="stat-label outfit">Alertes & supervision</div>
                 <div class="stat-value-sm outfit text-danger">{{ stats()?.openFraudAlerts ?? '-' }}</div>
               </div>
             </div>
@@ -99,7 +99,7 @@ import { auditActionFr, entityTypeFr } from '../../../shared/display-labels';
                 <a routerLink="/admin/security-system/fraud-alerts" class="priority-card border-danger">
                   <div class="p-info">
                     <span class="p-count outfit">{{ stats()?.openFraudAlerts ?? 0 }}</span>
-                    <span class="p-label outfit">Alertes de sécurité</span>
+                    <span class="p-label outfit">Alertes & supervision</span>
                   </div>
                   <span class="p-arrow">→</span>
                 </a>
@@ -131,7 +131,7 @@ import { auditActionFr, entityTypeFr } from '../../../shared/display-labels';
     .stat-value small { font-size: 1rem; opacity: 0.6; }
     .stat-value-sm { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
     .stat-icon-bg { position: absolute; right: -10px; bottom: -10px; font-size: 6rem; opacity: 0.1; transform: rotate(-15deg); }
-
+    
     .grid-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; align-items: start; }
     .section-head { margin-bottom: 1rem; }
     .section-head h3 { font-size: 0.85rem; color: var(--gray-500); font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }

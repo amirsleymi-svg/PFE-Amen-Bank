@@ -206,7 +206,10 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   static scrollPosition = 0;
   @ViewChild('scrollContainer') scrollContainer!: ElementRef<HTMLElement>;
 
-  ngOnInit() {}
+  ngOnInit() {
+    // Initial expansion based on current route
+    setTimeout(() => this.expandActiveSubmenus(), 0);
+  }
 
   toggleSubmenu(label: string) {
     this.expandedMenus.update(set => {
@@ -240,9 +243,37 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     private router: Router,
     private wsService: NotificationWebsocketService
   ) {
-    this.router.events.subscribe(e => { if (e instanceof NavigationEnd) this.closeMobileMenu(); });
+    this.router.events.subscribe(e => { 
+      if (e instanceof NavigationEnd) {
+        this.closeMobileMenu();
+        this.expandActiveSubmenus();
+      }
+    });
     
     this.wsService.badgeCounts$.subscribe(counts => this.sidebarBadgeCounts.set(counts));
+  }
+
+  private expandActiveSubmenus() {
+    this.items().forEach(item => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(child => 
+          this.router.isActive(child.route, {
+            paths: 'subset',
+            queryParams: 'ignored',
+            fragment: 'ignored',
+            matrixParams: 'ignored'
+          })
+        );
+        if (hasActiveChild) {
+          this.expandedMenus.update(set => {
+            if (set.has(item.label)) return set;
+            const newSet = new Set(set);
+            newSet.add(item.label);
+            return newSet;
+          });
+        }
+      }
+    });
   }
 
   toggle() { this.open.update(v => !v); }
